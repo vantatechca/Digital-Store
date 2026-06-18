@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Admin · Dispatch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --ink:#15120f; --ink-2:#1d1915; --ink-3:#272019;
+    --line:#3a3128; --amber:#e0a458; --amber-dim:#b9823f;
+    --text:#f0e9df; --muted:#a99c8a; --good:#7fb37a; --bad:#d4756a; --blue:#7a9fb3;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ink);color:var(--text);font-family:Inter,system-ui,sans-serif}
+  .mono{font-family:"IBM Plex Mono",monospace}
+  /* login */
+  .login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+  .login .box{background:var(--ink-2);border:1px solid var(--line);border-radius:16px;padding:32px;width:360px}
+  .login h1{margin:0 0 4px;font-size:22px}
+  .login p{color:var(--muted);font-size:13px;margin:0 0 22px}
+  .login .dot{width:11px;height:11px;border-radius:3px;background:var(--amber);box-shadow:0 0 14px var(--amber);display:inline-block;margin-right:8px}
+  label{font-size:12px;color:var(--muted);font-weight:500}
+  input,select,textarea{width:100%;background:var(--ink);border:1px solid var(--line);color:var(--text);
+    padding:11px 12px;border-radius:9px;font-size:14px;font-family:inherit;margin:4px 0 14px}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--amber)}
+  .btn{background:var(--amber);color:#1a130a;border:none;padding:11px 16px;border-radius:9px;font-weight:700;cursor:pointer;font-size:14px}
+  .btn.ghost{background:var(--ink-3);color:var(--text);border:1px solid var(--line);font-weight:600}
+  .btn.sm{padding:6px 11px;font-size:12px;border-radius:7px}
+  .btn.danger{background:none;border:1px solid var(--bad);color:var(--bad)}
+  .err{color:var(--bad);font-size:13px;margin-top:8px}
+
+  /* shell */
+  .app{display:none;min-height:100vh}
+  .app.on{display:grid;grid-template-columns:210px 1fr}
+  aside.nav{background:var(--ink-2);border-right:1px solid var(--line);padding:22px 14px;display:flex;flex-direction:column;gap:4px}
+  .nav .brand{font-weight:700;padding:6px 10px 18px;display:flex;align-items:center}
+  .nav .dot{width:10px;height:10px;border-radius:3px;background:var(--amber);box-shadow:0 0 12px var(--amber);margin-right:9px}
+  .nav button{text-align:left;background:none;border:none;color:var(--muted);padding:10px 12px;border-radius:9px;cursor:pointer;font-size:14px;font-weight:500}
+  .nav button.active{background:var(--ink-3);color:var(--text)}
+  .nav button:hover{color:var(--text)}
+  .nav .spacer{flex:1}
+  main{padding:30px 34px;overflow-y:auto;height:100vh}
+  h2.page{margin:0 0 22px;font-size:22px;font-weight:700}
+  .view{display:none}
+  .view.on{display:block}
+
+  /* stats */
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:24px}
+  .kpi{background:var(--ink-2);border:1px solid var(--line);border-radius:13px;padding:18px}
+  .kpi .l{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+  .kpi .v{font-size:26px;font-weight:700;margin-top:6px}
+  .kpi .v.amber{color:var(--amber)}
+  .panel{background:var(--ink-2);border:1px solid var(--line);border-radius:13px;padding:20px;margin-bottom:20px}
+  .panel h3{margin:0 0 16px;font-size:15px}
+  .chart{display:flex;align-items:flex-end;gap:6px;height:160px}
+  .bar{flex:1;background:linear-gradient(var(--amber),var(--amber-dim));border-radius:4px 4px 0 0;min-height:2px;position:relative}
+  .bar:hover::after{content:attr(data-v);position:absolute;bottom:100%;left:50%;transform:translateX(-50%);
+    background:var(--ink-3);border:1px solid var(--line);padding:3px 7px;border-radius:6px;font-size:11px;white-space:nowrap;margin-bottom:4px}
+  .chart-x{display:flex;gap:6px;margin-top:6px}
+  .chart-x span{flex:1;text-align:center;font-size:9px;color:var(--muted)}
+  .toplist{display:flex;flex-direction:column;gap:10px}
+  .toplist .ti{display:flex;justify-content:space-between;font-size:14px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+  .toplist .ti b{color:var(--amber)}
+
+  /* tables */
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th{text-align:left;color:var(--muted);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.06em;
+    padding:10px 12px;border-bottom:1px solid var(--line)}
+  td{padding:12px;border-bottom:1px solid var(--line);vertical-align:middle}
+  tr:hover td{background:var(--ink-2)}
+  .pill{font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600;text-transform:capitalize}
+  .pill.paid,.pill.delivered{background:rgba(127,179,122,.15);color:var(--good)}
+  .pill.pending{background:rgba(224,164,88,.15);color:var(--amber)}
+  .pill.refunded,.pill.cancelled{background:rgba(212,117,106,.15);color:var(--bad)}
+  .toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:12px}
+  .stockmini{font-size:12px;color:var(--muted)}
+  .stockmini.out{color:var(--bad)}
+
+  /* modal */
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;padding:24px;z-index:50}
+  .modal.on{display:flex}
+  .modal .m{background:var(--ink-2);border:1px solid var(--line);border-radius:16px;padding:26px;width:480px;max-height:88vh;overflow-y:auto}
+  .modal h3{margin:0 0 18px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:8px}
+  textarea{min-height:80px;resize:vertical}
+  .hint{font-size:11px;color:var(--muted);margin:-10px 0 12px}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login" id="login">
+  <div class="box">
+    <h1><span class="dot"></span>Dispatch admin</h1>
+    <p>Sign in to manage products, keys & orders.</p>
+    <label>Email</label>
+    <input type="email" id="lEmail" value="admin@store.local" />
+    <label>Password</label>
+    <input type="password" id="lPass" value="admin123" onkeydown="if(event.key==='Enter')doLogin()" />
+    <button class="btn" style="width:100%" onclick="doLogin()">Sign in</button>
+    <div class="err" id="lErr"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app" id="app">
+  <aside class="nav">
+    <div class="brand"><span class="dot"></span>DISPATCH</div>
+    <button class="active" data-v="overview" onclick="nav('overview')">Overview</button>
+    <button data-v="products" onclick="nav('products')">Products</button>
+    <button data-v="orders" onclick="nav('orders')">Orders</button>
+    <div class="spacer"></div>
+    <button onclick="logout()">Sign out</button>
+  </aside>
+  <main>
+    <!-- OVERVIEW -->
+    <div class="view on" id="v-overview">
+      <h2 class="page">Overview</h2>
+      <div class="kpis" id="kpis"></div>
+      <div class="panel">
+        <h3>Revenue — last 14 days</h3>
+        <div class="chart" id="chart"></div>
+        <div class="chart-x" id="chartX"></div>
+      </div>
+      <div class="panel">
+        <h3>Top products</h3>
+        <div class="toplist" id="toplist"></div>
+      </div>
+    </div>
+
+    <!-- PRODUCTS -->
+    <div class="view" id="v-products">
+      <div class="toolbar">
+        <h2 class="page" style="margin:0">Delivery rules</h2>
+        <button class="btn" onclick="openProduct()">+ New rule</button>
+      </div>
+      <p class="hint" style="margin:-8px 0 16px">Each rule maps a Shopify SKU to how this app fulfills it. Pricing lives in Shopify.</p>
+      <div class="panel" style="padding:0;overflow:hidden">
+        <table>
+          <thead><tr><th>Product</th><th>SKU</th><th>Type</th><th>Stock</th><th>Status</th><th></th></tr></thead>
+          <tbody id="prodRows"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ORDERS -->
+    <div class="view" id="v-orders">
+      <div class="toolbar">
+        <h2 class="page" style="margin:0">Orders</h2>
+        <select id="orderFilter" style="width:auto;margin:0" onchange="loadOrders()">
+          <option value="">All statuses</option>
+          <option value="pending">Pending</option>
+          <option value="paid">Paid</option>
+          <option value="delivered">Delivered</option>
+          <option value="refunded">Refunded</option>
+        </select>
+      </div>
+      <div class="panel" style="padding:0;overflow:hidden">
+        <table>
+          <thead><tr><th>Order</th><th>Customer</th><th>Items</th><th>Total</th><th>Method</th><th>Status</th><th></th></tr></thead>
+          <tbody id="orderRows"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- PRODUCT MODAL -->
+<div class="modal" id="prodModal">
+  <div class="m">
+    <h3 id="prodModalTitle">New rule</h3>
+    <input type="hidden" id="pId" />
+    <label>Shopify SKU</label><input id="pSku" class="mono" placeholder="TKP-LIFETIME" />
+    <div class="hint">Must match the variant SKU sent from Shopify.</div>
+    <label>Name</label><input id="pName" />
+    <label>Description</label><textarea id="pDesc"></textarea>
+    <label>Delivery type</label>
+    <select id="pType" onchange="toggleTypeFields()">
+      <option value="license_key">License key</option>
+      <option value="file_download">File download</option>
+      <option value="access_grant">Access grant</option>
+    </select>
+    <div id="fDownload" style="display:none"><label>Download URL</label><input id="pDownload" /></div>
+    <div id="fAccess" style="display:none"><label>Access template</label><textarea id="pAccess" placeholder="Use {email} and {order}"></textarea></div>
+    <div style="margin-bottom:14px"><label><input type="checkbox" id="pActive" checked style="width:auto;margin-right:6px" />Active</label></div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal('prodModal')">Cancel</button>
+      <button class="btn" onclick="saveProduct()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- KEYS MODAL -->
+<div class="modal" id="keysModal">
+  <div class="m">
+    <h3>Add license keys — <span id="keysProdName"></span></h3>
+    <input type="hidden" id="keysProdId" />
+    <label>One key per line</label>
+    <textarea id="keysText" class="mono" placeholder="ABCD-1234-EFGH&#10;WXYZ-5678-IJKL" style="min-height:160px"></textarea>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal('keysModal')">Cancel</button>
+      <button class="btn" onclick="saveKeys()">Add keys</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = location.origin;
+let token = localStorage.getItem("dispatch_token") || "";
+
+const money = c => "$" + (c/100).toFixed(2);
+const slugify = s => s.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+
+async function api(path, opts={}){
+  const r = await fetch(`${API}${path}`, {
+    ...opts,
+    headers:{ "Content-Type":"application/json", ...(token?{Authorization:`Bearer ${token}`}:{}) , ...(opts.headers||{}) }
+  });
+  if(r.status===401){ logout(); throw new Error("Session expired"); }
+  if(!r.ok){ const e=await r.json().catch(()=>({})); throw new Error(e.detail||"Request failed"); }
+  return r.status===204?null:r.json();
+}
+
+async function doLogin(){
+  const email=document.getElementById("lEmail").value, pass=document.getElementById("lPass").value;
+  const body = new URLSearchParams({username:email,password:pass});
+  try{
+    const r = await fetch(`${API}/api/admin/login`,{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body});
+    if(!r.ok) throw new Error("Invalid credentials");
+    const data = await r.json();
+    token = data.access_token; localStorage.setItem("dispatch_token",token);
+    enterApp();
+  }catch(e){ document.getElementById("lErr").textContent = e.message; }
+}
+
+function logout(){ token=""; localStorage.removeItem("dispatch_token");
+  document.getElementById("app").classList.remove("on"); document.getElementById("login").style.display="flex"; }
+
+function enterApp(){
+  document.getElementById("login").style.display="none";
+  document.getElementById("app").classList.add("on");
+  loadStats(); loadProducts(); loadOrders();
+}
+
+function nav(v){
+  document.querySelectorAll(".nav button[data-v]").forEach(b=>b.classList.toggle("active",b.dataset.v===v));
+  document.querySelectorAll(".view").forEach(el=>el.classList.remove("on"));
+  document.getElementById("v-"+v).classList.add("on");
+}
+
+/* ---- stats ---- */
+async function loadStats(){
+  const s = await api("/api/admin/stats");
+  document.getElementById("kpis").innerHTML = [
+    ["Revenue", money(s.revenue_cents), "amber"],
+    ["Orders", s.orders_total, ""],
+    ["Paid", s.orders_paid, ""],
+    ["Pending", s.orders_pending, ""],
+    ["Customers", s.customers, ""],
+    ["Active products", s.products_active, ""],
+  ].map(([l,v,c])=>`<div class="kpi"><div class="l">${l}</div><div class="v ${c}">${v}</div></div>`).join("");
+
+  const max = Math.max(1,...s.revenue_by_day.map(d=>d.cents));
+  document.getElementById("chart").innerHTML = s.revenue_by_day.map(d=>
+    `<div class="bar" style="height:${(d.cents/max*100)}%" data-v="${d.date}: ${money(d.cents)}"></div>`).join("");
+  document.getElementById("chartX").innerHTML = s.revenue_by_day.map(d=>
+    `<span>${d.date.slice(5)}</span>`).join("");
+
+  document.getElementById("toplist").innerHTML = s.top_products.length
+    ? s.top_products.map(p=>`<div class="ti"><span>${esc(p.name)}</span><b>${p.units} sold</b></div>`).join("")
+    : `<div style="color:var(--muted);font-size:13px">No sales yet.</div>`;
+}
+
+/* ---- products ---- */
+let productCache = [];
+async function loadProducts(){
+  productCache = await api("/api/admin/products");
+  document.getElementById("prodRows").innerHTML = productCache.map(p=>{
+    const stock = p.delivery_type==="license_key"
+      ? `<span class="stockmini ${p.keys_available===0?'out':''}">${p.keys_available} keys</span>`
+      : `<span class="stockmini">—</span>`;
+    const keysBtn = p.delivery_type==="license_key"
+      ? `<button class="btn sm ghost" onclick="openKeys(${p.id})">Keys</button>` : "";
+    return `<tr>
+      <td><b>${esc(p.name)}</b></td>
+      <td class="mono" style="font-size:12px">${esc(p.sku)}</td>
+      <td><span class="stockmini">${p.delivery_type.replace('_',' ')}</span></td>
+      <td>${stock}</td>
+      <td><span class="pill ${p.active?'paid':'cancelled'}">${p.active?'active':'hidden'}</span></td>
+      <td style="text-align:right;white-space:nowrap">
+        ${keysBtn}
+        <button class="btn sm ghost" onclick="openProduct(${p.id})">Edit</button>
+        <button class="btn sm danger" onclick="delProduct(${p.id})">Del</button>
+      </td>
+    </tr>`;
+  }).join("") || `<tr><td colspan="6" style="color:var(--muted)">No products yet.</td></tr>`;
+}
+
+function openProduct(id){
+  const m=document.getElementById("prodModal");
+  if(id){
+    const p=productCache.find(x=>x.id===id);
+    pId.value=p.id; pSku.value=p.sku; pName.value=p.name; pDesc.value=p.description||"";
+    pType.value=p.delivery_type;
+    pDownload.value=p.download_url||""; pAccess.value=p.access_template||""; pActive.checked=p.active;
+    document.getElementById("prodModalTitle").textContent="Edit rule";
+  } else {
+    ["pId","pSku","pName","pDesc","pDownload","pAccess"].forEach(i=>document.getElementById(i).value="");
+    pType.value="license_key"; pActive.checked=true;
+    document.getElementById("prodModalTitle").textContent="New rule";
+  }
+  toggleTypeFields(); m.classList.add("on");
+}
+function toggleTypeFields(){
+  const t=document.getElementById("pType").value;
+  document.getElementById("fDownload").style.display = t==="file_download"?"block":"none";
+  document.getElementById("fAccess").style.display = t==="access_grant"?"block":"none";
+}
+async function saveProduct(){
+  const body={
+    sku:pSku.value.trim(), name:pName.value, description:pDesc.value,
+    delivery_type:pType.value, download_url:pDownload.value, access_template:pAccess.value,
+    active:pActive.checked
+  };
+  if(!body.sku){ alert("SKU is required — it must match the Shopify variant SKU."); return; }
+  try{
+    if(pId.value) await api(`/api/admin/products/${pId.value}`,{method:"PATCH",body:JSON.stringify(body)});
+    else await api("/api/admin/products",{method:"POST",body:JSON.stringify(body)});
+    closeModal("prodModal"); loadProducts(); loadStats();
+  }catch(e){ alert(e.message); }
+}
+async function delProduct(id){ if(!confirm("Delete this product?"))return;
+  await api(`/api/admin/products/${id}`,{method:"DELETE"}); loadProducts(); }
+
+function openKeys(id){
+  const p=productCache.find(x=>x.id===id);
+  document.getElementById("keysProdId").value=id;
+  document.getElementById("keysProdName").textContent=p.name;
+  document.getElementById("keysText").value="";
+  document.getElementById("keysModal").classList.add("on");
+}
+async function saveKeys(){
+  const id=document.getElementById("keysProdId").value;
+  const keys=document.getElementById("keysText").value.split("\n").map(s=>s.trim()).filter(Boolean);
+  if(!keys.length){ alert("Paste at least one key."); return; }
+  await api(`/api/admin/products/${id}/keys`,{method:"POST",body:JSON.stringify({keys})});
+  closeModal("keysModal"); loadProducts();
+}
+
+/* ---- orders ---- */
+async function loadOrders(){
+  const f=document.getElementById("orderFilter").value;
+  const orders = await api("/api/admin/orders"+(f?`?status=${f}`:""));
+  document.getElementById("orderRows").innerHTML = orders.map(o=>{
+    const items=o.items.map(i=>`${i.quantity}× ${esc(i.product_name)}`).join(", ");
+    let actions="";
+    if(o.status==="pending") actions=`<button class="btn sm" onclick="fulfill('${o.public_id}')">Fulfill</button>`;
+    else if(o.status==="paid") actions=`<button class="btn sm" onclick="fulfill('${o.public_id}')">Deliver</button>`;
+    if(o.status==="paid"||o.status==="delivered") actions+=` <button class="btn sm danger" onclick="refund('${o.public_id}')">Refund</button>`;
+    return `<tr>
+      <td class="mono" style="font-size:12px">${o.public_id.slice(0,8)}</td>
+      <td>${esc(o.email)}</td>
+      <td style="font-size:13px;color:var(--muted)">${items}</td>
+      <td class="mono">${money(o.total_cents)}</td>
+      <td><span class="stockmini">${esc(o.payment_method)}</span></td>
+      <td><span class="pill ${o.status}">${o.status}</span></td>
+      <td style="text-align:right;white-space:nowrap">${actions}</td>
+    </tr>`;
+  }).join("") || `<tr><td colspan="7" style="color:var(--muted)">No orders.</td></tr>`;
+}
+async function fulfill(pid){ await api(`/api/admin/orders/${pid}/fulfill`,{method:"POST"}); loadOrders(); loadStats(); }
+async function refund(pid){ if(!confirm("Refund this order?"))return;
+  await api(`/api/admin/orders/${pid}/refund`,{method:"POST"}); loadOrders(); loadStats(); }
+
+function closeModal(id){ document.getElementById(id).classList.remove("on"); }
+function esc(s){return (s||"").replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+if(token) enterApp();
+</script>
+</body>
+</html>
