@@ -3,42 +3,78 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Checkout — Safe Store Portal</title>
+<title>Checkout — Complete Your Order</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<!-- Warm up connections to Whop for faster modal rendering -->
+<link rel="preconnect" href="https://js.whop.com" crossorigin />
+<link rel="preconnect" href="https://whop.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-<!-- Dynamic script engine loader -->
+<!-- Include Whop's dynamic loader library -->
 <script async defer src="https://js.whop.com/static/checkout/loader.js"></script>
 <style>
   :root {
-    --bg-main: #f9fafb; --bg-card: #ffffff; --text-main: #111827; --text-muted: #4b5563;
-    --border-color: #e5e7eb; --radius-lg: 12px; --radius-md: 8px;
+    --bg-main: #f9fafb;
+    --bg-card: #ffffff;
+    --text-main: #111827;
+    --text-muted: #4b5563;
+    --border-color: #e5e7eb;
+    --radius-lg: 12px;
+    --radius-md: 8px;
   }
+
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg-main); color: var(--text-main); font-family: Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  body { 
+    background: var(--bg-main); 
+    color: var(--text-main); 
+    font-family: Inter, system-ui, sans-serif; 
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
   .mono { font-family: "IBM Plex Mono", monospace; }
-  header { background: var(--bg-card); border-bottom: 1px solid var(--border-color); padding: 16px 40px; display: flex; align-items: center; justify-content: space-between; }
+
+  header {
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border-color);
+    padding: 16px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
   .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; }
   .brand .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--text-main); }
-  
-  .checkout-container { max-width: 1200px; margin: 0 auto; padding: 40px 24px; display: grid; grid-template-columns: 1fr 420px; gap: 48px; }
-  @media (max-width: 960px) { .checkout-container { grid-template-columns: 1fr; } .order-summary-pane { order: -1; } }
+  .secure { font-size: 13px; color: var(--text-muted); display: flex; align-items: center; gap: 4px; }
 
-  /* Customized Form Layout Groups */
-  .form-section { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 24px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+  /* Two-column layout grid */
+  .checkout-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 24px;
+    display: grid;
+    grid-template-columns: 1fr 420px;
+    gap: 48px;
+  }
+
+  @media (max-width: 960px) {
+    .checkout-container { grid-template-columns: 1fr; gap: 32px; padding: 20px 16px; }
+    .order-summary-pane { order: -1; }
+  }
+
+  /* Form Section Designs */
+  .form-section { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 24px; margin-bottom: 24px; }
   .form-section h2 { font-size: 16px; font-weight: 600; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
   .form-section h2 .num { background: var(--text-main); color: #fff; width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; }
   
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .field-group { margin-bottom: 16px; }
-  .field-group:last-of-type { margin-bottom: 0; }
+  .field-group { margin-bottom: 16px; position: relative; }
   .field-group label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; color: var(--text-main); }
-  .field-group input, .field-group select { width: 100%; padding: 10px 14px; border: 1px solid var(--border-color); border-radius: var(--radius-md); font-family: inherit; font-size: 14px; color: var(--text-main); outline: none; background: #fff; }
-  .field-group input:focus, .field-group select:focus { border-color: #6b7280; }
+  .field-group input, .field-group select { width: 100%; padding: 12px 14px; border: 1px solid var(--border-color); border-radius: var(--radius-md); font-family: inherit; font-size: 14px; color: var(--text-main); outline: none; }
+  .field-group input:focus, .field-group select:focus { border-color: #111827; }
+  .error-msg { color: #ef4444; font-size: 12px; margin-top: 4px; display: none; }
 
-  /* Pinned Right Side Summaries */
+  /* Sidebar sticky review card */
   .order-summary-pane { position: sticky; top: 40px; height: fit-content; }
-  .summary-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+  .summary-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 24px; }
   .summary-card h2 { font-size: 14px; font-weight: 600; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); }
   .line-items { border-bottom: 1px solid var(--border-color); margin-bottom: 16px; }
   .line { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding: 12px 0; }
@@ -47,104 +83,103 @@
   .line .amt { font-size: 14px; font-weight: 600; }
   .total-row { display: flex; justify-content: space-between; align-items: center; font-weight: 700; font-size: 18px; padding-top: 16px; }
 
-  /* Submit payment button styling */
-  .pay-btn { display: block; width: 100%; padding: 14px; background: #111827; color: #fff; border: none; border-radius: var(--radius-md); font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 20px; transition: background 0.15s ease; }
-  .pay-btn:hover { background: #1f2937; }
+  /* Unified Page Pay Button */
+  .submit-main-btn { width: 100%; padding: 16px; background: #111827; color: #fff; border: none; border-radius: var(--radius-md); font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 24px; transition: background 0.15s; }
+  .submit-main-btn:hover { background: #1f2937; }
+  .submit-main-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
-  /* Whop Container clean styling wrapper */
-  #whop-checkout-container { width: 100%; min-height: 120px; }
+  /* ─── MODAL DIALOG POPUP OVERLAY ─── */
+  .whop-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 99999; display: none; align-items: center; justify-content: center; padding: 16px; backdrop-filter: blur(4px); }
+  .whop-modal-box { background: #fff; border-radius: 14px; width: 100%; max-width: 440px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); overflow: hidden; }
+  .whop-modal-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 24px; border-bottom: 1px solid var(--border-color); }
+  .whop-modal-header h3 { font-size: 16px; font-weight: 600; }
+  .close-modal-btn { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--text-muted); }
+  .whop-modal-body { padding: 24px; }
+  
+  /* Iframe target wrapper container */
+  .whop-embed-wrap { position: relative; min-height: 160px; background: #f9fafb; border-radius: var(--radius-md); overflow: hidden; margin-bottom: 20px; }
+  .whop-loader-spinner { width: 24px; height: 24px; border: 3px solid #e5e7eb; border-top-color: #111827; border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(3600deg); } }
+
+  .notice { padding: 80px 24px; text-align: center; color: var(--text-muted); }
+  .notice b { color: var(--text-main); display: block; font-size: 18px; margin-bottom: 8px; }
 </style>
 </head>
 <body>
 
 <header>
   <div class="brand"><span class="dot"></span> DISPATCH <span style="color:var(--text-muted);font-weight:400;font-size:15px;">/ checkout</span></div>
-  <span style="font-size:13px;color:var(--text-muted)">🔒 Secure 256-Bit Verification</span>
+  <span class="secure">🔒 Secure 256-bit SSL Encryption</span>
 </header>
 
 <div class="checkout-container" id="main-layout">
-  
-  <!-- LEFT COLUMN: Your Customized Elements & Stripped Whop Card Elements -->
+  <!-- LEFT: CUSTOM INPUTS FORM PANEL -->
   <div class="checkout-forms-pane">
-    
-    <!-- 1. Customized Contact Info Card Element -->
+    <!-- Contact Info -->
     <div class="form-section">
-      <h2><span class="num">1</span> Contact</h2>
+      <h2><span class="num">1</span> Customer Details</h2>
       <div class="field-group">
-        <label for="cust-email">Email Address</label>
-        <input type="email" id="cust-email" placeholder="you@example.com" required />
+        <label for="email">Email Address</label>
+        <input type="email" id="email" placeholder="you@example.com" autocomplete="email" required />
+        <div class="error-msg" id="email-error">Please enter a valid email address</div>
       </div>
-      <div class="grid-2" style="margin-top: 16px;">
+      <div class="grid-2" style="margin-top:16px;">
         <div class="field-group">
-          <label for="cust-first">First Name</label>
-          <input type="text" id="cust-first" placeholder="John" required />
+          <label for="firstName">First Name</label>
+          <input type="text" id="firstName" placeholder="John" required />
+          <div class="error-msg" id="firstName-error">Required</div>
         </div>
         <div class="field-group">
-          <label for="cust-last">Last Name</label>
-          <input type="text" id="cust-last" placeholder="Doe" required />
+          <label for="lastName">Last Name</label>
+          <input type="text" id="lastName" placeholder="Doe" required />
+          <div class="error-msg" id="lastName-error">Required</div>
         </div>
       </div>
     </div>
 
-    <!-- 2. Customized Shipping Address Element -->
+    <!-- Billing/Shipping Info -->
     <div class="form-section">
-      <h2><span class="num">2</span> Shipping Address</h2>
+      <h2><span class="num">2</span> Billing Address</h2>
       <div class="field-group">
-        <label for="cust-addr">Address</label>
-        <input type="text" id="cust-addr" placeholder="123 Main St" required />
+        <label for="address1">Street Address</label>
+        <input type="text" id="address1" placeholder="123 Main St" required />
+        <div class="error-msg" id="address1-error">Address is required</div>
       </div>
-      <div class="field-group" style="margin-top:16px;">
-        <label for="cust-suite">Apartment, suite, etc. (optional)</label>
-        <input type="text" id="cust-suite" placeholder="Apt 4B" />
-      </div>
-      <div class="grid-2" style="margin-top: 16px;">
+      <div class="grid-2" style="margin-top:16px;">
         <div class="field-group">
-          <label for="cust-city">City</label>
-          <input type="text" id="cust-city" placeholder="Toronto" required />
+          <label for="city">City</label>
+          <input type="text" id="city" placeholder="Montreal" required />
+          <div class="error-msg" id="city-error">Required</div>
         </div>
         <div class="field-group">
-          <label for="cust-country">Country</label>
-          <select id="cust-country">
-            <option value="CA">Canada</option>
+          <label for="country">Country</label>
+          <select id="country">
+            <option value="CA" selected>Canada</option>
             <option value="US">United States</option>
           </select>
         </div>
       </div>
-      <div class="grid-2" style="margin-top: 16px;">
+      <div class="grid-2" style="margin-top:16px;">
         <div class="field-group">
-          <label for="cust-prov">Province / State</label>
-          <input type="text" id="cust-prov" placeholder="Ontario" required />
+          <label for="zone">Province / State</label>
+          <input type="text" id="zone" placeholder="Quebec" required />
+          <div class="error-msg" id="zone-error">Required</div>
         </div>
         <div class="field-group">
-          <label for="cust-zip">Postal Code</label>
-          <input type="text" id="cust-zip" placeholder="M4B 1B3" required />
+          <label for="postalCode">Postal / Zip Code</label>
+          <input type="text" id="postalCode" placeholder="H3B 1A1" required />
+          <div class="error-msg" id="postal-error">Required</div>
         </div>
       </div>
     </div>
 
-    <!-- 3. Payment Method: Stripped to Card-Only rows -->
-    <div class="form-section">
-      <h2><span class="num">3</span> Payment Method</h2>
-      <!-- Whop container sits directly here, configured to hide email/addresses -->
-      <div 
-        id="whop-checkout-container"
-        class="whop-checkout"
-        data-whop-checkout-product-id="prod_QFNeNKDLEGC1v"
-        data-whop-checkout-theme="light"
-        data-whop-checkout-theme-accent-color="#111827"
-        data-whop-checkout-hide-email="true"
-        data-whop-checkout-hide-address-form="true"
-        data-whop-checkout-hide-price="true"
-        data-whop-checkout-hide-terms-and-conditions="true">
-      </div>
-      
-      <!-- Custom checkout action hook -->
-      <button class="pay-btn" id="custom-pay-trigger" onclick="triggerWhopSubmit()">Pay &amp; get goods</button>
-    </div>
-
+    <!-- Unified Form Execution Trigger -->
+    <button class="submit-main-btn" id="submitBtn" onclick="handleFormValidation()">
+      <span id="btnLabel">Proceed to Secure Payment</span>
+    </button>
   </div>
 
-  <!-- RIGHT COLUMN: Sticky Order Summary pane -->
+  <!-- RIGHT: STICKY ORDER SUMMARY PANE -->
   <div class="order-summary-pane">
     <div class="summary-card">
       <h2>Review Your Order</h2>
@@ -157,8 +192,34 @@
   </div>
 </div>
 
-<div class="notice" id="noCart" style="display:none; text-align:center; padding:100px 24px;">
-  <b>No item parameter loaded.</b> Ensure you access via a checkout click action.
+<div class="notice" id="noCart" style="display:none">
+  <b>Your cart link has expired.</b> Please recreate the link and try again.
+</div>
+
+<!-- ─── THE PRIVACY CLOAKED WHOP PAYMENT MODAL POPOVER ─── -->
+<div class="whop-modal-overlay" id="whopModal">
+  <div class="whop-modal-box">
+    <div class="whop-modal-header">
+      <h3>Enter Payment Details</h3>
+      <button class="close-modal-btn" onclick="closeWhopModal()">&times;</button>
+    </div>
+    <div class="whop-modal-body">
+      <div class="whop-embed-wrap">
+        <!-- Dynamic Frame Target Target point -->
+        <div id="whopEmbedTarget"></div>
+        <!-- Absolute layered loading cover screen -->
+        <div id="whopLoadingOverlay" style="position:absolute;inset:0;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;">
+          <div class="whop-loader-spinner"></div>
+          <span style="font-size:13px;color:var(--text-muted)">Connecting securely to card merchant...</span>
+        </div>
+      </div>
+
+      <!-- Complete Order Button -->
+      <button class="submit-main-btn" id="whopPayBtn" style="margin-top:0;" onclick="submitWhopEmbed()">
+        Pay <span id="whopPayBtnAmount"></span>
+      </button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -167,6 +228,10 @@ const currency = params.get("currency") || "USD";
 const money = d => currency + " " + Number(d).toFixed(2);
 const itemsParam = params.get("items") || "";
 let items = [];
+
+// Session Tracker variables matching your layout setup
+let WHOP_PENDING_SESSION_ACTIVE = false;
+let WHOP_EMBED_READY = false;
 
 function b64urlDecode(s){
   s = s.replace(/-/g,"+").replace(/_/g,"/");
@@ -195,41 +260,134 @@ function init(){
   document.getElementById("total").textContent = money(total);
 }
 
-// Intercepts your custom button click and passes inputs down into Whop's engine securely
-async function triggerWhopSubmit() {
-  const emailVal = document.getElementById("cust-email").value;
-  const frameEl = document.querySelector("#whop-checkout-container iframe");
+function esc(s){return (s==null?"":""+s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 
-  if(!emailVal) {
-    alert("Please enter a valid email address first.");
-    return;
-  }
+/* ─── PHASE 1: FORM VALIDATION ─── */
+function handleFormValidation() {
+  const email = document.getElementById('email').value.trim();
+  const first = document.getElementById('firstName').value.trim();
+  const last = document.getElementById('lastName').value.trim();
+  const addr = document.getElementById('address1').value.trim();
+  const city = document.getElementById('city').value.trim();
+  const zip = document.getElementById('postalCode').value.trim();
+  const zone = document.getElementById('zone').value.trim();
 
-  // Programmatically forward customer metadata parameters down into the frame context
-  if (window.WhopCheckout) {
-     try {
-       const checkoutRef = window.WhopCheckout.getInstances()[0];
-       
-       // Sync your inputs down to Whop's validation registry
-       await checkoutRef.setEmail(emailVal);
-       await checkoutRef.setAddress({
-          name: document.getElementById("cust-first").value + " " + document.getElementById("cust-last").value,
-          country: document.getElementById("cust-country").value,
-          line1: document.getElementById("cust-addr").value,
-          city: document.getElementById("cust-city").value,
-          state: document.getElementById("cust-prov").value,
-          postalCode: document.getElementById("cust-zip").value
-       });
+  let isValid = true;
 
-       // Instruct Whop's secure payment router to capture the fields
-       checkoutRef.submit();
-     } catch(err) {
-       console.error("Synchronization pipeline error:", err);
-     }
+  // Visual Form Check validation loops
+  if(!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { document.getElementById('email-error').style.display='block'; isValid = false; } else { document.getElementById('email-error').style.display='none'; }
+  if(!first) { document.getElementById('firstName-error').style.display='block'; isValid = false; } else { document.getElementById('firstName-error').style.display='none'; }
+  if(!last) { document.getElementById('lastName-error').style.display='block'; isValid = false; } else { document.getElementById('lastName-error').style.display='none'; }
+  if(!addr) { document.getElementById('address1-error').style.display='block'; isValid = false; } else { document.getElementById('address1-error').style.display='none'; }
+  if(!city) { document.getElementById('city-error').style.display='block'; isValid = false; } else { document.getElementById('city-error').style.display='none'; }
+  if(!zone) { document.getElementById('zone-error').style.display='block'; isValid = false; } else { document.getElementById('zone-error').style.display='none'; }
+  if(!zip) { document.getElementById('postal-error').style.display='block'; isValid = false; } else { document.getElementById('postal-error').style.display='none'; }
+
+  if (!isValid) return;
+
+  // Open popover module immediately
+  openWhopModal();
+}
+
+/* ─── PHASE 2: INJECT EMULATED WHOP MODAL ─── */
+async function openWhopModal() {
+  document.getElementById('whopPayBtnAmount').textContent = document.getElementById('total').textContent;
+  document.getElementById('whopModal').style.display = 'flex';
+
+  if (WHOP_PENDING_SESSION_ACTIVE) return; // Prevent double injection
+  WHOP_PENDING_SESSION_ACTIVE = true;
+
+  try {
+    // 1. Ask your backend router to request the real Whop Session token safely
+    const response = await fetch("/api/payments/create-whop-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ items: items, currency: currency })
+    });
+    const sessionData = await response.json();
+
+    // 2. Build the embedded element container dynamically matching your template architecture
+    const target = document.getElementById('whopEmbedTarget');
+    const embed = document.createElement('div');
+    embed.id = 'whopCheckoutEmbed';
+    
+    // Configured directly with your static product container values
+    embed.setAttribute('data-whop-checkout-plan-id', 'prod_QFNeNKDLEGC1v'); 
+    embed.setAttribute('data-whop-checkout-session', sessionData.sessionId);
+    embed.setAttribute('data-whop-checkout-skip-redirect', 'true');
+    embed.setAttribute('data-whop-checkout-on-complete', 'onWhopCheckoutComplete');
+    embed.setAttribute('data-whop-checkout-on-state-change', 'onWhopStateChange');
+    
+    // STRIP redundencies: Hide Whop email, addresses, pricing breakdowns, and buttons
+    embed.setAttribute('data-whop-checkout-hide-email', 'true');
+    embed.setAttribute('data-whop-checkout-hide-address', 'true');
+    embed.setAttribute('data-whop-checkout-hide-price', 'true');
+    embed.setAttribute('data-whop-checkout-hide-submit-button', 'true');
+    embed.setAttribute('data-whop-checkout-theme', 'light');
+
+    target.innerHTML = '';
+    target.appendChild(embed);
+
+    // 3. Command the runtime loader to scan the newly appended node
+    if (window.WhopCheckout) {
+      window.WhopCheckout.mount();
+    }
+
+  } catch(err) {
+    console.error("Merchant initialization breakdown:", err);
   }
 }
 
-function esc(s){return (s==null?"":""+s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+// Global listen tracking state hooks fired natively from Whop code loops
+window.onWhopStateChange = function(state) {
+  if (state === 'ready') {
+    WHOP_EMBED_READY = true;
+    document.getElementById('whopLoadingOverlay').style.display = 'none'; // Uncover fields!
+    syncMetadataToWhop(); // Prefill hidden data variables instantly
+  }
+};
+
+// Sync metadata parameters down into iframe data registry structures
+function syncMetadataToWhop() {
+  const elementId = 'whopCheckoutEmbed';
+  if (window.wco) {
+    const emailVal = document.getElementById('email').value.trim();
+    window.wco.setEmail(elementId, emailVal);
+    window.wco.setAddress(elementId, {
+      name: document.getElementById('firstName').value.trim() + " " + document.getElementById('lastName').value.trim(),
+      country: document.getElementById('country').value,
+      line1: document.getElementById('address1').value.trim(),
+      city: document.getElementById('city').value.trim(),
+      state: document.getElementById('zone').value.trim(),
+      postalCode: document.getElementById('postalCode').value.trim()
+    });
+  }
+}
+
+/* ─── PHASE 3: PROCESS SUBMIT ORDER CAPTURE ─── */
+function submitWhopEmbed() {
+  if (!WHOP_EMBED_READY || !window.wco) {
+    alert("Card fields are initializing. One moment please.");
+    return;
+  }
+  
+  // Re-verify synchronization parameters right before clicking trigger
+  syncMetadataToWhop();
+  
+  // Direct command execution telling the child window payment card inputs to register charge
+  window.wco.submit('whopCheckoutEmbed');
+}
+
+// Route transaction complete logic hook
+window.onWhopCheckoutComplete = function(planId, receiptId) {
+  // Cleans cache variables and sweeps user directly into target success database template link!
+  window.location.href = "/success.html?receipt=" + encodeURIComponent(receiptId);
+};
+
+function closeWhopModal() {
+  document.getElementById('whopModal').style.display = 'none';
+}
+
 init();
 </script>
 </body>
