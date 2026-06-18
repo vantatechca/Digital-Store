@@ -1,9 +1,13 @@
 from pathlib import Path
+from typing import List # <-- Added for cart item lists
+import os               # <-- Added to read env variables
+import httpx            # <-- Added to communicate with Whop's servers
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException # Added HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel # <-- Added for payload data structures
 
 from .auth import hash_password
 from .config import get_settings
@@ -26,6 +30,53 @@ app.add_middleware(
 app.include_router(public.router)
 app.include_router(checkout.router)
 app.include_router(admin.router)
+
+
+# ─── WHOP SECURE SESSION SCHEMAS ───
+class CartItem(BaseModel):
+    name: str
+    quantity: int
+    unitPrice: float
+
+class SessionPayload(BaseModel):
+    items: List[CartItem]
+    currency: str = "CAD"
+
+
+# ─── NEW DYNAMIC PAYMENTS ROUTE ───
+@app.post("/api/payments/create-whop-session")
+async def create_whop_session(payload: SessionPayload):
+    # Calculate the exact total on the backend to avoid price tampering
+    total_amount = sum(item.unitPrice * item.quantity for item in payload.items)
+    
+    url = "https://api.whop.com/v1/checkout_configurations"
+    headers = {
+        "Authorization": f"Bearer {os.getenv('WHOP_API_KEY')}",
+        "Content-Type": "application/json"
+    }
+    
+    body = {
+        "company_id": os.getenv("WHOP_COMPANY_ID"),
+        "mode": "payment",
+        "currency": payload.currency.lower(),
+        "plan": {
+            "initial_price": total_amount,
+            "plan_type": "one_time"
+        }
+    }
+
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.post(url, json=body, headers=headers)
+            if response.status_code != 200:
+                print(f"[Whop Error] Status: {response.status_code}, Body: {response.text}")
+                raise HTTPException(status_code=400, detail="Whop gateway failed to initialize.")
+            
+            data = response.json()
+            return {"sessionId": data.get("id")} # Returns the ch_xxxxxx session token
+            
+        except httpx.RequestError as exc:
+            raise HTTPException(status_code=503, detail=f"Failed to reach billing server: {exc}")
 
 
 @app.on_event("startup")
