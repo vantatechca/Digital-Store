@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     whop_api_base: str = "https://api.whop.com"
 
     download_token_ttl_hours: int = 72
-    max_downloads_per_item: int = 5
+    max_downloads_per_item: int = 3
 
     # Cloudflare R2 (S3-compatible) for hosting downloadable files.
     # When set, a delivery rule's download_url that is an object KEY (not http…)
@@ -44,7 +44,7 @@ class Settings(BaseSettings):
     r2_bucket: str = ""
     r2_endpoint: str = ""               # full S3 endpoint (required for non-R2, e.g. Supabase)
     r2_region: str = "auto"             # "auto" for R2; the project region for Supabase (e.g. us-east-1)
-    download_presign_ttl_seconds: int = 300
+    download_presign_ttl_seconds: int = 60
 
     access_token_ttl_minutes: int = 60 * 12
 

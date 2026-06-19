@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, StreamingResponse
 from sqlalchemy.orm import Session
 
 from ..config import get_settings
@@ -44,13 +44,30 @@ def download(token: str, db: Session = Depends(get_db)):
     if not product or not product.download_url:
         raise HTTPException(404, "File unavailable")
 
-    # R2 object key → short-lived signed URL; otherwise use the URL as-is.
     target = product.download_url
+
+    # Object key → stream the file THROUGH the backend so the real storage URL
+    # is never exposed to the browser (nothing to capture or reshare).
     if storage.is_object_key(target):
         if not storage.is_configured():
             raise HTTPException(503, "File storage not configured")
-        target = storage.presigned_url(target)
+        try:
+            obj = storage.get_object(target)
+        except Exception:
+            raise HTTPException(404, "File unavailable")
+        d.download_count += 1
+        db.commit()
+        filename = target.rsplit("/", 1)[-1]
+        headers = {"Content-Disposition": f'attachment; filename="{filename}"'}
+        if obj.get("ContentLength"):
+            headers["Content-Length"] = str(obj["ContentLength"])
+        return StreamingResponse(
+            obj["Body"].iter_chunks(chunk_size=64 * 1024),
+            media_type=obj.get("ContentType") or "application/octet-stream",
+            headers=headers,
+        )
 
+    # Plain public URL → redirect (the host owner chose to make it public).
     d.download_count += 1
     db.commit()
     return RedirectResponse(target)

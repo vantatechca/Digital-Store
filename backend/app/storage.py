@@ -56,3 +56,15 @@ def presigned_url(key: str) -> str:
         Params={"Bucket": settings.r2_bucket, "Key": key.lstrip("/")},
         ExpiresIn=settings.download_presign_ttl_seconds,
     )
+
+
+def get_object(key: str):
+    """Fetch the object so the backend can stream it to the buyer.
+
+    Streaming through the backend means the real (signed) storage URL is never
+    exposed to the browser — nothing to capture or reshare.
+    """
+    client = _client()
+    if client is None:
+        raise RuntimeError("R2 is not configured")
+    return client.get_object(Bucket=settings.r2_bucket, Key=key.lstrip("/"))
