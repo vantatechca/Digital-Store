@@ -109,7 +109,7 @@
 <body>
 
 <header>
-  <div class="brand"><span class="dot"></span> DISPATCH <span style="color:var(--text-muted);font-weight:400;font-size:15px;">/ checkout</span></div>
+  <div class="brand"><span class="dot"></span> <span id="brandName">Checkout</span> <span style="color:var(--text-muted);font-weight:400;font-size:15px;">/ checkout</span></div>
   <span class="secure">🔒 Secure 256-bit SSL Encryption</span>
 </header>
 
@@ -204,6 +204,13 @@ function b64urlDecode(s){
 }
 
 function init(){
+  // Brand the page with the store that redirected here.
+  const store = (params.get("storename") || "").trim();
+  if (store) {
+    document.getElementById("brandName").textContent = store;
+    document.title = store + " — Checkout";
+  }
+
   try{
     items = JSON.parse(b64urlDecode(itemsParam));
     if(!Array.isArray(items) || !items.length) throw new Error("empty");
