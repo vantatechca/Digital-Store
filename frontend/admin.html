@@ -173,7 +173,7 @@
       </div>
       <div class="panel" style="padding:0;overflow:hidden">
         <table>
-          <thead><tr><th>Order</th><th>Customer</th><th>Store</th><th>Items</th><th>Total</th><th>Method</th><th>Status</th><th></th></tr></thead>
+          <thead><tr><th>Order</th><th>Date</th><th>Customer</th><th>Store</th><th>Items</th><th>Total</th><th>Method</th><th>Status</th><th></th></tr></thead>
           <tbody id="orderRows"></tbody>
         </table>
       </div>
@@ -241,6 +241,13 @@ const API = "";
 let token = localStorage.getItem("dispatch_token") || "";
 
 const money = c => "$" + (c/100).toFixed(2);
+// Backend stores UTC without a tz suffix — treat it as UTC, show in local time.
+function fmtDate(iso){
+  if(!iso) return "—";
+  if(!/[Z+]/.test(iso)) iso += "Z";
+  const d = new Date(iso);
+  return isNaN(d) ? "—" : d.toLocaleString(undefined,{month:"short",day:"numeric",year:"numeric",hour:"numeric",minute:"2-digit"});
+}
 const slugify = s => s.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
 
 async function api(path, opts={}){
@@ -413,6 +420,7 @@ function renderOrders(){
     if(o.status==="paid"||o.status==="delivered") actions+=` <button class="btn sm danger" onclick="refund('${o.public_id}')">Refund</button>`;
     return `<tr>
       <td class="mono" style="font-size:12px">${o.public_id.slice(0,8)}</td>
+      <td style="font-size:12px;color:var(--muted);white-space:nowrap">${fmtDate(o.created_at)}</td>
       <td>${esc(o.email)}</td>
       <td>${o.store?esc(o.store):'<span style="color:var(--muted)">—</span>'}</td>
       <td style="font-size:13px;color:var(--muted)">${items}</td>
@@ -421,7 +429,7 @@ function renderOrders(){
       <td><span class="pill ${o.status}">${o.status}</span></td>
       <td style="text-align:right;white-space:nowrap">${actions}</td>
     </tr>`;
-  }).join("") || `<tr><td colspan="8" style="color:var(--muted)">No orders.</td></tr>`;
+  }).join("") || `<tr><td colspan="9" style="color:var(--muted)">No orders.</td></tr>`;
 }
 async function fulfill(pid){ await api(`/api/admin/orders/${pid}/fulfill`,{method:"POST"}); loadOrders(); loadStats(); }
 async function refund(pid){ if(!confirm("Refund this order?"))return;
@@ -433,7 +441,7 @@ async function openOrder(pid){
   currentOrderPid = pid;
   const o = orderCache.find(x=>x.public_id===pid) || {};
   document.getElementById("odId").textContent = pid.slice(0,8);
-  document.getElementById("odMeta").textContent = `${o.email||""} · ${o.store||"—"} · ${money(o.total_cents||0)} · ${o.status||""}`;
+  document.getElementById("odMeta").textContent = `${o.email||""} · ${o.store||"—"} · ${money(o.total_cents||0)} · ${o.status||""} · ${fmtDate(o.created_at)}`;
   document.getElementById("odDeliveries").innerHTML = `<div style="color:var(--muted);font-size:13px">Loading…</div>`;
   document.getElementById("orderModal").classList.add("on");
   try{
