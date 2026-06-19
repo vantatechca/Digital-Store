@@ -44,10 +44,14 @@ class CartItem(BaseModel):
     name: str
     quantity: int
     unitPrice: float
+    sku: str = ""
+    variant: str = ""
 
 class SessionPayload(BaseModel):
     items: List[CartItem]
-    currency: str = "CAD"
+    currency: str = "USD"
+    storename: str = ""
+    source: str = ""
 
 
 # ─── NEW DYNAMIC PAYMENTS ROUTE ───
@@ -78,9 +82,15 @@ async def create_whop_session(payload: SessionPayload):
         },
         "metadata": {
             "order_ref": order_ref,
+            "store": payload.storename,
+            "source": payload.source,
             "currency": payload.currency,
             "total": total_amount,
-            "items": "; ".join(f"{i.quantity}x {i.name}" for i in payload.items)[:480],
+            # Real items behind this charge, so the transaction record is accurate.
+            "items": "; ".join(
+                f"{i.quantity}x {i.name}" + (f" ({i.variant})" if i.variant else "")
+                for i in payload.items
+            )[:480],
         },
     }
 

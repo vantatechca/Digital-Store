@@ -316,7 +316,12 @@ async function openWhopModal() {
     const response = await fetch(`${BACKEND_URL}/api/payments/create-whop-session`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ items: items, currency: currency })
+      body: JSON.stringify({
+        items: items,
+        currency: currency,
+        storename: params.get('storename') || "",
+        source: params.get('source') || ""
+      })
     });
     const sessionData = await response.json();
     if (!response.ok || !sessionData.sessionId) {
