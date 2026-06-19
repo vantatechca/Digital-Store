@@ -8,37 +8,40 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 <style>
   :root{
-    --ink:#15120f; --ink-2:#1d1915; --ink-3:#272019;
-    --line:#3a3128; --amber:#e0a458; --amber-dim:#b9823f;
-    --text:#f0e9df; --muted:#a99c8a; --good:#7fb37a; --bad:#d4756a; --blue:#7a9fb3;
+    --bg-main:#f9fafb; --bg-card:#ffffff; --bg-subtle:#f3f4f6;
+    --line:#e5e7eb; --text:#111827; --muted:#6b7280;
+    --accent:#111827; --good:#16a34a; --bad:#dc2626; --blue:#2563eb;
   }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--ink);color:var(--text);font-family:Inter,system-ui,sans-serif}
+  body{margin:0;background:var(--bg-main);color:var(--text);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
   .mono{font-family:"IBM Plex Mono",monospace}
   /* login */
   .login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
-  .login .box{background:var(--ink-2);border:1px solid var(--line);border-radius:16px;padding:32px;width:360px}
+  .login .box{background:var(--bg-card);border:1px solid var(--line);border-radius:16px;padding:32px;width:360px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
   .login h1{margin:0 0 4px;font-size:22px}
   .login p{color:var(--muted);font-size:13px;margin:0 0 22px}
-  .login .dot{width:11px;height:11px;border-radius:3px;background:var(--amber);box-shadow:0 0 14px var(--amber);display:inline-block;margin-right:8px}
+  .login .dot{width:11px;height:11px;border-radius:50%;background:var(--accent);display:inline-block;margin-right:8px}
   label{font-size:12px;color:var(--muted);font-weight:500}
-  input,select,textarea{width:100%;background:var(--ink);border:1px solid var(--line);color:var(--text);
-    padding:11px 12px;border-radius:9px;font-size:14px;font-family:inherit;margin:4px 0 14px}
-  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--amber)}
-  .btn{background:var(--amber);color:#1a130a;border:none;padding:11px 16px;border-radius:9px;font-weight:700;cursor:pointer;font-size:14px}
-  .btn.ghost{background:var(--ink-3);color:var(--text);border:1px solid var(--line);font-weight:600}
+  input,select,textarea{width:100%;background:var(--bg-card);border:1px solid var(--line);color:var(--text);
+    padding:11px 12px;border-radius:8px;font-size:14px;font-family:inherit;margin:4px 0 14px}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent)}
+  .btn{background:var(--accent);color:#fff;border:none;padding:11px 16px;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;transition:background .15s}
+  .btn:hover{background:#1f2937}
+  .btn.ghost{background:var(--bg-card);color:var(--text);border:1px solid var(--line);font-weight:600}
+  .btn.ghost:hover{background:var(--bg-subtle)}
   .btn.sm{padding:6px 11px;font-size:12px;border-radius:7px}
   .btn.danger{background:none;border:1px solid var(--bad);color:var(--bad)}
+  .btn.danger:hover{background:rgba(220,38,38,.06)}
   .err{color:var(--bad);font-size:13px;margin-top:8px}
 
   /* shell */
   .app{display:none;min-height:100vh}
   .app.on{display:grid;grid-template-columns:210px 1fr}
-  aside.nav{background:var(--ink-2);border-right:1px solid var(--line);padding:22px 14px;display:flex;flex-direction:column;gap:4px}
+  aside.nav{background:var(--bg-card);border-right:1px solid var(--line);padding:22px 14px;display:flex;flex-direction:column;gap:4px}
   .nav .brand{font-weight:700;padding:6px 10px 18px;display:flex;align-items:center}
-  .nav .dot{width:10px;height:10px;border-radius:3px;background:var(--amber);box-shadow:0 0 12px var(--amber);margin-right:9px}
-  .nav button{text-align:left;background:none;border:none;color:var(--muted);padding:10px 12px;border-radius:9px;cursor:pointer;font-size:14px;font-weight:500}
-  .nav button.active{background:var(--ink-3);color:var(--text)}
+  .nav .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);margin-right:9px}
+  .nav button{text-align:left;background:none;border:none;color:var(--muted);padding:10px 12px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:500}
+  .nav button.active{background:var(--bg-subtle);color:var(--text)}
   .nav button:hover{color:var(--text)}
   .nav .spacer{flex:1}
   main{padding:30px 34px;overflow-y:auto;height:100vh}
@@ -48,40 +51,40 @@
 
   /* stats */
   .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:24px}
-  .kpi{background:var(--ink-2);border:1px solid var(--line);border-radius:13px;padding:18px}
+  .kpi{background:var(--bg-card);border:1px solid var(--line);border-radius:12px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
   .kpi .l{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
   .kpi .v{font-size:26px;font-weight:700;margin-top:6px}
-  .kpi .v.amber{color:var(--amber)}
-  .panel{background:var(--ink-2);border:1px solid var(--line);border-radius:13px;padding:20px;margin-bottom:20px}
+  .kpi .v.amber{color:var(--good)}
+  .panel{background:var(--bg-card);border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:20px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
   .panel h3{margin:0 0 16px;font-size:15px}
   .chart{display:flex;align-items:flex-end;gap:6px;height:160px}
-  .bar{flex:1;background:linear-gradient(var(--amber),var(--amber-dim));border-radius:4px 4px 0 0;min-height:2px;position:relative}
+  .bar{flex:1;background:var(--accent);border-radius:4px 4px 0 0;min-height:2px;position:relative}
   .bar:hover::after{content:attr(data-v);position:absolute;bottom:100%;left:50%;transform:translateX(-50%);
-    background:var(--ink-3);border:1px solid var(--line);padding:3px 7px;border-radius:6px;font-size:11px;white-space:nowrap;margin-bottom:4px}
+    background:var(--text);color:#fff;padding:3px 7px;border-radius:6px;font-size:11px;white-space:nowrap;margin-bottom:4px}
   .chart-x{display:flex;gap:6px;margin-top:6px}
   .chart-x span{flex:1;text-align:center;font-size:9px;color:var(--muted)}
   .toplist{display:flex;flex-direction:column;gap:10px}
   .toplist .ti{display:flex;justify-content:space-between;font-size:14px;padding-bottom:8px;border-bottom:1px solid var(--line)}
-  .toplist .ti b{color:var(--amber)}
+  .toplist .ti b{color:var(--text)}
 
   /* tables */
   table{width:100%;border-collapse:collapse;font-size:14px}
   th{text-align:left;color:var(--muted);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.06em;
     padding:10px 12px;border-bottom:1px solid var(--line)}
   td{padding:12px;border-bottom:1px solid var(--line);vertical-align:middle}
-  tr:hover td{background:var(--ink-2)}
+  tr:hover td{background:var(--bg-subtle)}
   .pill{font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600;text-transform:capitalize}
-  .pill.paid,.pill.delivered{background:rgba(127,179,122,.15);color:var(--good)}
-  .pill.pending{background:rgba(224,164,88,.15);color:var(--amber)}
-  .pill.refunded,.pill.cancelled{background:rgba(212,117,106,.15);color:var(--bad)}
+  .pill.paid,.pill.delivered{background:rgba(22,163,74,.12);color:var(--good)}
+  .pill.pending{background:rgba(217,119,6,.14);color:#b45309}
+  .pill.refunded,.pill.cancelled{background:rgba(220,38,38,.10);color:var(--bad)}
   .toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:12px}
   .stockmini{font-size:12px;color:var(--muted)}
   .stockmini.out{color:var(--bad)}
 
   /* modal */
-  .modal{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;padding:24px;z-index:50}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;padding:24px;z-index:50;backdrop-filter:blur(4px)}
   .modal.on{display:flex}
-  .modal .m{background:var(--ink-2);border:1px solid var(--line);border-radius:16px;padding:26px;width:480px;max-height:88vh;overflow-y:auto}
+  .modal .m{background:var(--bg-card);border:1px solid var(--line);border-radius:14px;padding:26px;width:480px;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.15)}
   .modal h3{margin:0 0 18px}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:8px}
@@ -357,7 +360,7 @@ async function loadOrders(){
   document.getElementById("orderRows").innerHTML = orders.map(o=>{
     const items=o.items.map(i=>`${i.quantity}× ${esc(i.product_name)}`).join(", ");
     let actions="";
-    if(o.status==="pending") actions=`<button class="btn sm" onclick="fulfill('${o.public_id}')">Fulfill</button>`;
+    if(o.status==="pending") actions=`<button class="btn sm" onclick="fulfill('${o.public_id}')">Mark paid</button>`;
     else if(o.status==="paid") actions=`<button class="btn sm" onclick="fulfill('${o.public_id}')">Deliver</button>`;
     if(o.status==="paid"||o.status==="delivered") actions+=` <button class="btn sm danger" onclick="refund('${o.public_id}')">Refund</button>`;
     return `<tr>

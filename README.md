@@ -78,10 +78,33 @@ Without API keys, stripe/crypto return a stub `payment_url` so the pending → f
 
 ---
 
+## Whop checkout (the live payment path)
+
+The Shopify storefronts redirect buyers to `checkout.html`, which takes payment through **Whop's embedded checkout**. Pricing is dynamic (any cart total) via a single Whop product whose price is overridden per checkout session.
+
+Order lifecycle:
+
+```
+Proceed → POST /api/payments/create-whop-session   (mints a Whop session + an order_ref in its metadata)
+Pay     → POST /api/orders/create-pending          (records a PENDING order, linked by order_ref)
+Paid by EITHER:
+  • POST /api/webhooks/whop  → matches order_ref → marks paid + fulfills   (automatic)
+  • Admin → Orders → "Mark paid"                                            (manual fallback)
+```
+
+**Config** (`.env`): `WHOP_API_KEY`, `WHOP_PRODUCT_ID`, `WHOP_API_BASE` (`https://api.whop.com` live, `https://sandbox-api.whop.com` test), `WHOP_WEBHOOK_SECRET`. The frontend `WHOP_ENV` (`checkout.html`) must match — `sandbox` while testing, `production` when live.
+
+**Sandbox testing:** create a business + a paid one-time product at [sandbox.whop.com](https://sandbox.whop.com), use its `prod_…` + a sandbox `apik_…`, set `WHOP_API_BASE` to the sandbox host, and pay with test card `4242 4242 4242 4242`.
+
+**Webhook setup:** Whop dashboard → Developer → Webhooks → point it at `https://<your-backend>/api/webhooks/whop`, copy the signing secret into `WHOP_WEBHOOK_SECRET`. `localhost` can't receive Whop webhooks — expose it (ngrok) or deploy first; until then use the **Mark paid** button. The handler logs each payload, and matches orders on the `order_ref` carried in the session metadata.
+
+---
+
 ## API surface
 
-Public: `GET /api/products`, `GET /api/products/{slug}`, `POST /api/checkout`, `GET /api/orders/{id}`, `GET /api/download/{token}`
-Admin (Bearer JWT): `POST /api/admin/login`, products CRUD + `/keys`, `GET /api/admin/orders`, order `/fulfill` + `/refund`, `GET /api/admin/stats`
+Public: `POST /api/checkout`, `POST /api/payments/create-whop-session`, `POST /api/orders/create-pending`, `GET /api/orders/{id}`, `GET /api/download/{token}`
+Webhooks: `POST /api/webhooks/whop`, `/api/webhooks/stripe`, `/api/webhooks/crypto`
+Admin (Bearer JWT): `POST /api/admin/login`, delivery-rule CRUD + `/keys`, `GET /api/admin/orders`, order `/fulfill` (Mark paid) + `/refund`, `GET /api/admin/stats`
 
 Interactive docs at `/docs`.
 
