@@ -190,6 +190,8 @@
     <div class="hint">Must match the variant SKU sent from Shopify.</div>
     <label>Name</label><input id="pName" />
     <label>Description</label><textarea id="pDesc"></textarea>
+    <label>Price (USD)</label><input id="pPrice" type="number" step="0.01" min="0" placeholder="0.00" />
+    <div class="hint">Locks the charge to this amount server-side (prevents price tampering). Leave 0 to trust the Shopify cart price.</div>
     <label>Delivery type</label>
     <select id="pType" onchange="toggleTypeFields()">
       <option value="license_key">License key</option>
@@ -335,11 +337,12 @@ function openProduct(id){
   if(id){
     const p=productCache.find(x=>x.id===id);
     pId.value=p.id; pSku.value=p.sku; pName.value=p.name; pDesc.value=p.description||"";
+    pPrice.value = p.price_cents ? (p.price_cents/100) : "";
     pType.value=p.delivery_type;
     pDownload.value=p.download_url||""; pAccess.value=p.access_template||""; pActive.checked=p.active;
     document.getElementById("prodModalTitle").textContent="Edit rule";
   } else {
-    ["pId","pSku","pName","pDesc","pDownload","pAccess"].forEach(i=>document.getElementById(i).value="");
+    ["pId","pSku","pName","pDesc","pPrice","pDownload","pAccess"].forEach(i=>document.getElementById(i).value="");
     pType.value="license_key"; pActive.checked=true;
     document.getElementById("prodModalTitle").textContent="New rule";
   }
@@ -353,6 +356,7 @@ function toggleTypeFields(){
 async function saveProduct(){
   const body={
     sku:pSku.value.trim(), name:pName.value, description:pDesc.value,
+    price_cents: Math.round((parseFloat(pPrice.value)||0)*100),
     delivery_type:pType.value, download_url:pDownload.value, access_template:pAccess.value,
     active:pActive.checked
   };

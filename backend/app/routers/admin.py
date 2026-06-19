@@ -1,12 +1,15 @@
+import json
 from collections import defaultdict
 from datetime import datetime, timedelta
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from ..auth import create_access_token, require_admin, verify_password
+from ..config import get_settings
 from ..database import get_db
 from ..delivery import fulfill_order, _send_confirmation_email
 from ..models import (
@@ -16,6 +19,7 @@ from ..schemas import (
     KeysAddIn, OrderOut, ProductCreate, ProductOut, ProductUpdate, StatsOut, TokenOut
 )
 
+settings = get_settings()
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
 
@@ -110,6 +114,24 @@ def refund(public_id: str, db: Session = Depends(get_db), _: Admin = Depends(req
     order = db.query(Order).filter(Order.public_id == public_id).first()
     if not order:
         raise HTTPException(404, "Not found")
+
+    # If we captured a Whop payment id, issue a real refund through Whop.
+    pay_id = ""
+    try:
+        if order.payment and order.payment.raw:
+            pay_id = json.loads(order.payment.raw).get("whop_payment_id", "")
+    except Exception:
+        pay_id = ""
+
+    if pay_id and settings.whop_api_key:
+        url = f"{settings.whop_api_base}/api/v1/payments/{pay_id}/refund"
+        try:
+            r = httpx.post(url, headers={"Authorization": f"Bearer {settings.whop_api_key}"}, json={}, timeout=20)
+        except httpx.RequestError as exc:
+            raise HTTPException(502, f"Could not reach Whop to refund: {exc}")
+        if r.status_code not in (200, 201):
+            raise HTTPException(502, f"Whop refund failed ({r.status_code}): {r.text[:300]}. Refund manually in the Whop dashboard.")
+
     order.status = OrderStatus.refunded
     db.commit()
     db.refresh(order)

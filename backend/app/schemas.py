@@ -23,6 +23,7 @@ class ProductBase(BaseModel):
     sku: str                       # Shopify variant SKU this rule fulfills
     name: str
     description: str = ""
+    price_cents: int = Field(default=0, ge=0)  # authoritative price; 0 = trust the cart price
     delivery_type: DeliveryType = DeliveryType.license_key
     download_url: str = ""
     access_template: str = ""
@@ -37,6 +38,7 @@ class ProductUpdate(BaseModel):
     sku: Optional[str] = None
     name: Optional[str] = None
     description: Optional[str] = None
+    price_cents: Optional[int] = Field(default=None, ge=0)
     delivery_type: Optional[DeliveryType] = None
     download_url: Optional[str] = None
     access_template: Optional[str] = None

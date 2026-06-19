@@ -3,16 +3,19 @@ from typing import List # <-- For cart item lists
 import uuid             # <-- To mint a reference linking the session to our order
 import httpx            # <-- To communicate with Whop's servers
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
 
+from . import pricing
 from .auth import hash_password
 from .config import get_settings
-from .database import Base, SessionLocal, engine
+from .database import Base, SessionLocal, engine, get_db
 from .models import Admin
+from .ratelimit import rate_limit
 from .routers import admin, checkout, public
 
 settings = get_settings()
@@ -55,10 +58,15 @@ class SessionPayload(BaseModel):
 
 
 # ─── NEW DYNAMIC PAYMENTS ROUTE ───
-@app.post("/api/payments/create-whop-session")
-async def create_whop_session(payload: SessionPayload):
-    # Calculate the exact total on the backend to avoid price tampering.
-    total_amount = round(sum(item.unitPrice * item.quantity for item in payload.items), 2)
+@app.post("/api/payments/create-whop-session", dependencies=[Depends(rate_limit("checkout", 20, 60))])
+async def create_whop_session(payload: SessionPayload, db: Session = Depends(get_db)):
+    # Authoritative total: use each rule's price (server-trusted) so a tampered
+    # client price can't lower the charge.
+    total_cents = sum(
+        pricing.authoritative_cents(db, item.sku, item.unitPrice) * item.quantity
+        for item in payload.items
+    )
+    total_amount = round(total_cents / 100, 2)
 
     if not settings.whop_product_id or not settings.whop_api_key:
         raise HTTPException(status_code=500, detail="Whop is not configured (WHOP_API_KEY / WHOP_PRODUCT_ID).")

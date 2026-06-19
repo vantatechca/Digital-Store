@@ -6,6 +6,8 @@ import json
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
+import re
+
 from ..config import get_settings
 from ..database import get_db
 from ..delivery import fulfill_order
@@ -13,6 +15,7 @@ from ..models import (
     Customer, Order, OrderItem, OrderStatus, Payment, PaymentStatus, Product
 )
 from ..payments import create_payment
+from ..ratelimit import rate_limit
 from ..schemas import CheckoutIn, CheckoutOut, DeliveryOut, PendingOrderIn
 
 settings = get_settings()
@@ -23,8 +26,9 @@ def _build_order_items(db: Session, order: Order, items) -> int:
     """Add OrderItems to an order from cart items; returns the total in cents."""
     total = 0
     for ci in items:
-        cents = round(ci.unitPrice * 100)
         rule = db.query(Product).filter(Product.sku == ci.sku).first() if ci.sku else None
+        # Authoritative price: the rule's price wins over the client-supplied one.
+        cents = rule.price_cents if (rule and rule.price_cents and rule.price_cents > 0) else round(ci.unitPrice * 100)
         line_name = f"{ci.name} — {ci.variant}" if ci.variant else ci.name
         total += cents * ci.quantity
         db.add(OrderItem(
@@ -38,7 +42,7 @@ def _build_order_items(db: Session, order: Order, items) -> int:
     return total
 
 
-@router.post("/checkout", response_model=CheckoutOut)
+@router.post("/checkout", response_model=CheckoutOut, dependencies=[Depends(rate_limit("checkout", 20, 60))])
 def checkout(payload: CheckoutIn, db: Session = Depends(get_db)):
     if not payload.items:
         raise HTTPException(400, "Cart is empty")
@@ -134,7 +138,7 @@ def checkout(payload: CheckoutIn, db: Session = Depends(get_db)):
     )
 
 
-@router.post("/orders/create-pending")
+@router.post("/orders/create-pending", dependencies=[Depends(rate_limit("create_pending", 30, 60))])
 def create_pending_order(payload: PendingOrderIn, db: Session = Depends(get_db)):
     """Buyer clicked Pay → record a PENDING Whop order before handing off.
 
@@ -297,5 +301,15 @@ async def whop_webhook(request: Request, db: Session = Depends(get_db)):
     if is_success and order_ref:
         payment = db.query(Payment).filter(Payment.provider_ref == order_ref).first()
         if payment and payment.order:
+            # Capture the Whop payment id (pay_…) so refunds can be issued later.
+            m = re.search(rb"pay_[A-Za-z0-9]+", body)
+            if m:
+                try:
+                    raw = json.loads(payment.raw) if payment.raw else {}
+                except Exception:
+                    raw = {}
+                raw["whop_payment_id"] = m.group(0).decode()
+                payment.raw = json.dumps(raw)[:5000]
+                db.commit()
             _confirm_and_fulfill(db, payment.order)
     return {"ok": True}
