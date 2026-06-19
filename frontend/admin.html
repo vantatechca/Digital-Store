@@ -211,7 +211,10 @@
 </div>
 
 <script>
-const API = location.origin;
+// Locally the backend serves this page (same origin); on Render the frontend and
+// backend are separate services, so point the API at the backend host.
+const isLocal = ["localhost", "127.0.0.1"].includes(location.hostname);
+const API = isLocal ? "" : "https://digital-store-backend-0tk9.onrender.com";
 let token = localStorage.getItem("dispatch_token") || "";
 
 const money = c => "$" + (c/100).toFixed(2);
