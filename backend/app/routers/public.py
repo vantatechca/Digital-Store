@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from ..config import get_settings
 from ..database import get_db
 from ..models import Delivery, DeliveryType, Order, Product
+from .. import storage
 
 settings = get_settings()
 router = APIRouter(prefix="/api", tags=["public"])
@@ -43,6 +44,13 @@ def download(token: str, db: Session = Depends(get_db)):
     if not product or not product.download_url:
         raise HTTPException(404, "File unavailable")
 
+    # R2 object key → short-lived signed URL; otherwise use the URL as-is.
+    target = product.download_url
+    if storage.is_object_key(target):
+        if not storage.is_configured():
+            raise HTTPException(503, "File storage not configured")
+        target = storage.presigned_url(target)
+
     d.download_count += 1
     db.commit()
-    return RedirectResponse(product.download_url)
+    return RedirectResponse(target)

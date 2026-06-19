@@ -34,6 +34,16 @@ class Settings(BaseSettings):
     download_token_ttl_hours: int = 72
     max_downloads_per_item: int = 5
 
+    # Cloudflare R2 (S3-compatible) for hosting downloadable files.
+    # When set, a delivery rule's download_url that is an object KEY (not http…)
+    # is served via a short-lived signed URL so files can't be reshared.
+    r2_account_id: str = ""
+    r2_access_key_id: str = ""
+    r2_secret_access_key: str = ""
+    r2_bucket: str = ""
+    r2_endpoint: str = ""               # optional; defaults to https://<account>.r2.cloudflarestorage.com
+    download_presign_ttl_seconds: int = 300
+
     access_token_ttl_minutes: int = 60 * 12
 
 
