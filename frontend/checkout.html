@@ -13,154 +13,140 @@
 <script async defer src="https://js.whop.com/static/checkout/loader.js"></script>
 <style>
   :root {
-    --bg-main: #f9fafb;
-    --bg-card: #ffffff;
-    --text-main: #111827;
-    --text-muted: #4b5563;
-    --border-color: #e5e7eb;
-    --radius-lg: 12px;
-    --radius-md: 8px;
+    --bg-main:#f6f7f9; --bg-card:#ffffff; --text-main:#0f172a; --text-muted:#64748b;
+    --border-color:#e7e9ee; --accent:#0f172a; --good:#16a34a; --bad:#ef4444;
+    --radius-lg:14px; --radius-md:9px;
   }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { 
-    background: var(--bg-main); 
-    color: var(--text-main); 
-    font-family: Inter, system-ui, sans-serif; 
-    line-height: 1.5;
-    -webkit-font-smoothing: antialiased;
-  }
-  .mono { font-family: "IBM Plex Mono", monospace; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg-main); color:var(--text-main); font-family:Inter,system-ui,sans-serif; line-height:1.5; -webkit-font-smoothing:antialiased; }
+  .mono { font-family:"IBM Plex Mono",monospace; }
+  a { color:inherit; }
 
   header {
-    background: var(--bg-card);
-    border-bottom: 1px solid var(--border-color);
-    padding: 16px 40px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    background:var(--bg-card); border-bottom:1px solid var(--border-color);
+    padding:16px 32px; display:flex; align-items:center; justify-content:space-between;
   }
-  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; }
-  .brand .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--text-main); }
-  .secure { font-size: 13px; color: var(--text-muted); display: flex; align-items: center; gap: 4px; }
+  .brand { display:flex; align-items:center; gap:10px; font-weight:700; font-size:18px; letter-spacing:-.01em; }
+  .brand .dot { width:10px; height:10px; border-radius:50%; background:var(--accent); }
+  .brand .sub { color:var(--text-muted); font-weight:400; font-size:14px; }
+  .secure { font-size:13px; color:var(--text-muted); display:flex; align-items:center; gap:6px; }
 
-  /* Two-column layout grid */
-  .checkout-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 40px 24px;
-    display: grid;
-    grid-template-columns: 1fr 420px;
-    gap: 48px;
-  }
+  .checkout-container { max-width:1140px; margin:0 auto; padding:44px 24px 64px; display:grid; grid-template-columns:1fr 440px; gap:48px; }
+  @media (max-width:920px) { .checkout-container { grid-template-columns:1fr; gap:28px; padding:24px 16px 48px; } .order-summary-pane { order:-1; } }
 
-  @media (max-width: 960px) {
-    .checkout-container { grid-template-columns: 1fr; gap: 32px; padding: 20px 16px; }
-    .order-summary-pane { order: -1; }
-  }
+  /* left column */
+  .form-section { background:var(--bg-card); border:1px solid var(--border-color); border-radius:var(--radius-lg); padding:26px; box-shadow:0 1px 2px rgba(15,23,42,.04); }
+  .form-section h2 { font-size:16px; font-weight:600; margin-bottom:6px; }
+  .form-section .lead { font-size:13px; color:var(--text-muted); margin-bottom:20px; }
+  .field-group { margin-bottom:8px; }
+  .field-group label { display:block; font-size:13px; font-weight:500; margin-bottom:6px; }
+  .field-group input { width:100%; padding:13px 14px; border:1px solid var(--border-color); border-radius:var(--radius-md); font-family:inherit; font-size:15px; color:var(--text-main); outline:none; transition:border-color .15s, box-shadow .15s; }
+  .field-group input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(15,23,42,.06); }
+  .error-msg { color:var(--bad); font-size:12px; margin-top:6px; display:none; }
 
-  /* Form Section Designs */
-  .form-section { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 24px; margin-bottom: 24px; }
-  .form-section h2 { font-size: 16px; font-weight: 600; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
-  .form-section h2 .num { background: var(--text-main); color: #fff; width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; }
-  
-  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .field-group { margin-bottom: 16px; position: relative; }
-  .field-group label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; color: var(--text-main); }
-  .field-group input, .field-group select { width: 100%; padding: 12px 14px; border: 1px solid var(--border-color); border-radius: var(--radius-md); font-family: inherit; font-size: 14px; color: var(--text-main); outline: none; }
-  .field-group input:focus, .field-group select:focus { border-color: #111827; }
-  .error-msg { color: #ef4444; font-size: 12px; margin-top: 4px; display: none; }
+  .submit-main-btn { width:100%; padding:16px; background:var(--accent); color:#fff; border:none; border-radius:var(--radius-md); font-size:16px; font-weight:600; cursor:pointer; margin-top:20px; transition:background .15s, transform .05s; }
+  .submit-main-btn:hover { background:#1e293b; }
+  .submit-main-btn:active { transform:translateY(1px); }
+  .submit-main-btn:disabled { opacity:.6; cursor:not-allowed; }
 
-  /* Sidebar sticky review card */
-  .order-summary-pane { position: sticky; top: 40px; height: fit-content; }
-  .summary-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 24px; }
-  .summary-card h2 { font-size: 14px; font-weight: 600; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); }
-  .line-items { border-bottom: 1px solid var(--border-color); margin-bottom: 16px; }
-  .line { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding: 12px 0; }
-  .line .name { font-size: 14px; font-weight: 500; }
-  .line .name small { color: var(--text-muted); display: block; font-size: 12px; margin-top: 2px; }
-  .line .amt { font-size: 14px; font-weight: 600; }
-  .total-row { display: flex; justify-content: space-between; align-items: center; font-weight: 700; font-size: 18px; padding-top: 16px; }
+  .assurances { display:flex; flex-direction:column; gap:10px; margin-top:22px; }
+  .assurances .row { display:flex; align-items:center; gap:10px; font-size:13px; color:var(--text-muted); }
+  .assurances .row .ic { width:18px; text-align:center; }
 
-  /* Unified Page Pay Button */
-  .submit-main-btn { width: 100%; padding: 16px; background: #111827; color: #fff; border: none; border-radius: var(--radius-md); font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 24px; transition: background 0.15s; }
-  .submit-main-btn:hover { background: #1f2937; }
-  .submit-main-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+  /* right column */
+  .order-summary-pane { position:sticky; top:40px; height:fit-content; }
+  .summary-card { background:var(--bg-card); border:1px solid var(--border-color); border-radius:var(--radius-lg); padding:24px; box-shadow:0 1px 2px rgba(15,23,42,.04); }
+  .summary-card h2 { font-size:12px; font-weight:600; margin-bottom:18px; text-transform:uppercase; letter-spacing:.07em; color:var(--text-muted); }
+  .line { display:flex; gap:12px; padding:14px 0; align-items:center; border-bottom:1px solid var(--border-color); }
+  .line:first-of-type { padding-top:0; }
+  .thumb { width:52px; height:52px; border-radius:9px; object-fit:cover; background:#eef1f5; border:1px solid var(--border-color); flex:0 0 auto; display:flex; align-items:center; justify-content:center; color:var(--text-muted); font-size:18px; }
+  .line .info { flex:1; min-width:0; }
+  .line .nm { font-size:14px; font-weight:500; }
+  .line .meta { font-size:12px; color:var(--text-muted); margin-top:3px; }
+  .line .amt { font-size:14px; font-weight:600; white-space:nowrap; }
+  .totals { padding-top:16px; }
+  .totals .r { display:flex; justify-content:space-between; font-size:14px; color:var(--text-muted); margin-bottom:8px; }
+  .totals .total { display:flex; justify-content:space-between; align-items:baseline; font-weight:700; font-size:20px; color:var(--text-main); padding-top:10px; border-top:1px solid var(--border-color); }
+  .tax-note { font-size:11px; color:var(--text-muted); margin-top:10px; }
 
-  /* ─── MODAL DIALOG POPUP OVERLAY ─── */
-  .whop-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 99999; display: none; align-items: flex-start; justify-content: center; padding: 24px 16px; overflow-y: auto; backdrop-filter: blur(4px); }
-  .whop-modal-box { background: #fff; border-radius: 14px; width: 100%; max-width: 440px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); margin: auto; max-height: calc(100vh - 48px); display: flex; flex-direction: column; overflow: hidden; }
-  .whop-modal-header { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; padding: 18px 24px; border-bottom: 1px solid var(--border-color); background: #fff; }
-  .whop-modal-header h3 { font-size: 16px; font-weight: 600; }
-  .close-modal-btn { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--text-muted); }
-  .whop-modal-body { padding: 24px; flex: 1 1 auto; overflow-y: auto; overflow-x: hidden; }
-  
-  /* Iframe target wrapper container */
-  .whop-embed-wrap { position: relative; min-height: 230px; background: #f9fafb; border-radius: var(--radius-md); overflow: visible; margin-bottom: 4px; }
-  .whop-loader-spinner { width: 24px; height: 24px; border: 3px solid #e5e7eb; border-top-color: #111827; border-radius: 50%; animation: spin 0.8s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  /* inline spinner shown inside a button while it's working */
-  .btn-spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: -3px; margin-right: 8px; }
+  .pay-badges { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:18px; padding-top:16px; border-top:1px solid var(--border-color); }
+  .pay-badges .cardlogo { font-size:10px; font-weight:700; letter-spacing:.04em; color:#fff; background:#475569; padding:3px 7px; border-radius:4px; }
+  .pay-badges .cardlogo.visa { background:#1a1f71; }
+  .pay-badges .cardlogo.mc { background:#eb001b; }
+  .pay-badges .cardlogo.amex { background:#2e77bc; }
+  .pay-badges .powered { margin-left:auto; font-size:11px; color:var(--text-muted); }
 
-  .notice { padding: 80px 24px; text-align: center; color: var(--text-muted); }
-  .notice b { color: var(--text-main); display: block; font-size: 18px; margin-bottom: 8px; }
+  .notice { padding:90px 24px; text-align:center; color:var(--text-muted); }
+  .notice b { color:var(--text-main); display:block; font-size:18px; margin-bottom:8px; }
+
+  /* modal */
+  .whop-modal-overlay { position:fixed; inset:0; background:rgba(15,23,42,.5); z-index:99999; display:none; align-items:flex-start; justify-content:center; padding:24px 16px; overflow-y:auto; backdrop-filter:blur(4px); }
+  .whop-modal-box { background:#fff; border-radius:16px; width:100%; max-width:440px; box-shadow:0 24px 70px rgba(0,0,0,.25); margin:auto; max-height:calc(100vh - 48px); display:flex; flex-direction:column; overflow:hidden; }
+  .whop-modal-header { flex:0 0 auto; display:flex; align-items:center; justify-content:space-between; padding:18px 22px; border-bottom:1px solid var(--border-color); }
+  .whop-modal-header h3 { font-size:16px; font-weight:600; }
+  .close-modal-btn { background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-muted); line-height:1; }
+  .whop-modal-body { padding:22px; flex:1 1 auto; overflow-y:auto; overflow-x:hidden; }
+  .whop-embed-wrap { position:relative; min-height:230px; background:#f6f7f9; border-radius:var(--radius-md); overflow:visible; }
+  .whop-loader-spinner { width:24px; height:24px; border:3px solid #e5e7eb; border-top-color:var(--accent); border-radius:50%; animation:spin .8s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .btn-spinner { display:inline-block; width:16px; height:16px; border:2px solid rgba(255,255,255,.4); border-top-color:#fff; border-radius:50%; animation:spin .7s linear infinite; vertical-align:-3px; margin-right:8px; }
 </style>
 </head>
 <body>
 
 <header>
-  <div class="brand"><span class="dot"></span> <span id="brandName">Checkout</span> <span style="color:var(--text-muted);font-weight:400;font-size:15px;">/ checkout</span></div>
-  <span class="secure">🔒 Secure 256-bit SSL Encryption</span>
+  <div class="brand"><span class="dot"></span> <span id="brandName">Checkout</span> <span class="sub">secure checkout</span></div>
+  <span class="secure">🔒 Encrypted &amp; secure</span>
 </header>
 
 <div class="checkout-container" id="main-layout">
   <div class="checkout-forms-pane">
     <div class="form-section">
-      <h2><span class="num">1</span> Customer Details</h2>
+      <h2>Where should we send your order?</h2>
+      <p class="lead">Your digital goods and receipt are delivered to this email instantly after payment.</p>
       <div class="field-group">
-        <label for="email">Email Address</label>
+        <label for="email">Email address</label>
         <input type="email" id="email" placeholder="you@example.com" autocomplete="email" required />
         <div class="error-msg" id="email-error">Please enter a valid email address</div>
       </div>
-      <div class="grid-2" style="margin-top:16px;">
-        <div class="field-group">
-          <label for="firstName">First Name</label>
-          <input type="text" id="firstName" placeholder="John" required />
-          <div class="error-msg" id="firstName-error">Required</div>
-        </div>
-        <div class="field-group">
-          <label for="lastName">Last Name</label>
-          <input type="text" id="lastName" placeholder="Doe" required />
-          <div class="error-msg" id="lastName-error">Required</div>
-        </div>
+      <button class="submit-main-btn" id="submitBtn" onclick="handleFormValidation()">
+        <span id="btnLabel">Continue to payment</span>
+      </button>
+      <div class="assurances">
+        <div class="row"><span class="ic">⚡</span> Instant delivery — sent to your inbox the moment payment clears</div>
+        <div class="row"><span class="ic">🔒</span> Card details handled by a PCI-compliant payment provider</div>
+        <div class="row"><span class="ic">↩︎</span> Lost your file? Re-download anytime from your receipt</div>
       </div>
     </div>
-
-    <button class="submit-main-btn" id="submitBtn" onclick="handleFormValidation()">
-      <span id="btnLabel">Proceed to Secure Payment</span>
-    </button>
   </div>
 
   <div class="order-summary-pane">
     <div class="summary-card">
-      <h2>Review Your Order</h2>
-      <div id="lines" class="line-items"></div>
-      <div class="total-row">
-        <span>Total Due</span>
-        <span id="total" class="mono">$0.00</span>
+      <h2>Order summary</h2>
+      <div id="lines"></div>
+      <div class="totals">
+        <div class="r"><span>Subtotal</span><span class="mono" id="subtotal">$0.00</span></div>
+        <div class="total"><span>Total</span><span class="mono" id="total">$0.00</span></div>
+        <div class="tax-note">Any applicable taxes are calculated at payment.</div>
+      </div>
+      <div class="pay-badges">
+        <span class="cardlogo visa">VISA</span>
+        <span class="cardlogo mc">MC</span>
+        <span class="cardlogo amex">AMEX</span>
+        <span class="powered">Payments by Whop</span>
       </div>
     </div>
   </div>
 </div>
 
 <div class="notice" id="noCart" style="display:none">
-  <b>Your cart link has expired.</b> Please recreate the link and try again.
+  <b>Your cart link has expired.</b> Please return to the store and start checkout again.
 </div>
 
 <div class="whop-modal-overlay" id="whopModal">
   <div class="whop-modal-box">
     <div class="whop-modal-header">
-      <h3>Enter Payment Details</h3>
+      <h3>Payment details</h3>
       <button class="close-modal-btn" onclick="closeWhopModal()">&times;</button>
     </div>
     <div class="whop-modal-body">
@@ -168,7 +154,7 @@
         <div id="whopEmbedTarget"></div>
         <div id="whopLoadingOverlay" style="position:absolute;inset:0;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;">
           <div class="whop-loader-spinner"></div>
-          <span style="font-size:13px;color:var(--text-muted)">Connecting securely to card merchant...</span>
+          <span style="font-size:13px;color:var(--text-muted)">Connecting securely…</span>
         </div>
       </div>
     </div>
@@ -182,13 +168,9 @@ const money = d => currency + " " + Number(d).toFixed(2);
 const itemsParam = params.get("items") || "";
 let items = [];
 
-// Use the local server when developing (same origin → no CORS); the deployed
-// Render backend otherwise.
-// This page is served by the backend, so all API calls are same-origin (no CORS).
+// Page is served by the backend → same-origin API calls (no CORS).
 const BACKEND_URL = "";
-
-// "sandbox" while testing (must match the backend's WHOP_API_BASE + a sandbox
-// plan id), "production" when live.
+// "sandbox" while testing, "production" when live (must match backend WHOP_API_BASE).
 const WHOP_ENV = "sandbox";
 
 let WHOP_PENDING_SESSION_ACTIVE = false;
@@ -203,9 +185,9 @@ function b64urlDecode(s){
   s += "=".repeat((4 - s.length % 4) % 4);
   return decodeURIComponent(escape(atob(s)));
 }
+function esc(s){return (s==null?"":""+s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 
 function init(){
-  // Brand the page with the store that redirected here.
   const store = (params.get("storename") || "").trim();
   if (store) {
     document.getElementById("brandName").textContent = store;
@@ -220,19 +202,24 @@ function init(){
     document.getElementById("noCart").style.display = "block";
     return;
   }
-  
+
   document.getElementById("lines").innerHTML = items.map(it=>{
+    const thumb = it.image
+      ? `<img class="thumb" src="${esc(it.image)}" alt="" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'thumb',textContent:'🧾'}))">`
+      : `<div class="thumb">🧾</div>`;
+    const meta = [it.variant ? esc(it.variant) : null, `Qty ${it.quantity}`].filter(Boolean).join(" · ");
     return `<div class="line">
-      <div class="name">${esc(it.name)}<small class="mono">qty ${it.quantity}</small></div>
+      ${thumb}
+      <div class="info"><div class="nm">${esc(it.name)}</div><div class="meta">${meta}</div></div>
       <div class="amt mono">${money(it.unitPrice * it.quantity)}</div>
     </div>`;
   }).join("");
-  
+
   const total = items.reduce((s,it)=>s + it.unitPrice*it.quantity, 0);
+  document.getElementById("subtotal").textContent = money(total);
   document.getElementById("total").textContent = money(total);
 
-  // Warm up the Whop session as soon as the buyer engages the form, so the
-  // payment modal mounts instantly instead of waiting on a round-trip.
+  // Warm the Whop session as soon as the buyer engages, so the modal is instant.
   document.getElementById("main-layout").addEventListener("focusin", prewarmSession, { once: true });
 }
 
@@ -241,23 +228,12 @@ let SESSION_PREWARM = null;
 function prewarmSession(){
   if (SESSION_PREWARM) return SESSION_PREWARM;
   SESSION_PREWARM = fetch(`${BACKEND_URL}/api/payments/create-whop-session`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      items: items,
-      currency: currency,
-      storename: params.get('storename') || "",
-      source: params.get('source') || ""
-    })
-  })
-    .then(async r => ({ ok: r.ok, data: await r.json() }))
-    .catch(e => ({ ok: false, data: { detail: e.message } }));
+    method:"POST", headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ items, currency, storename: params.get('storename')||"", source: params.get('source')||"" })
+  }).then(async r => ({ ok:r.ok, data: await r.json() })).catch(e => ({ ok:false, data:{ detail:e.message } }));
   return SESSION_PREWARM;
 }
 
-function esc(s){return (s==null?"":""+s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
-
-/* Disable a button and show an inline spinner; restore it with setLoading(btn,false). */
 function setLoading(btn, loading, loadingText){
   if(!btn) return;
   if(loading){
@@ -270,64 +246,41 @@ function setLoading(btn, loading, loadingText){
   }
 }
 
-/* ─── PHASE 1: FORM VALIDATION ─── */
+/* PHASE 1 — validate email */
 function handleFormValidation() {
   const email = document.getElementById('email').value.trim();
-  const first = document.getElementById('firstName').value.trim();
-  const last = document.getElementById('lastName').value.trim();
-
-  let isValid = true;
-
-  if(!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { document.getElementById('email-error').style.display='block'; isValid = false; } else { document.getElementById('email-error').style.display='none'; }
-  if(!first) { document.getElementById('firstName-error').style.display='block'; isValid = false; } else { document.getElementById('firstName-error').style.display='none'; }
-  if(!last) { document.getElementById('lastName-error').style.display='block'; isValid = false; } else { document.getElementById('lastName-error').style.display='none'; }
-
-  if (!isValid) return;
-
+  const errEl = document.getElementById('email-error');
+  if(!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ errEl.style.display='block'; return; }
+  errEl.style.display='none';
   setLoading(document.getElementById('submitBtn'), true, "Loading secure payment…");
   openWhopModal();
 }
 
-/* ─── PHASE 2: INJECT WHOP MODAL ─── */
+/* PHASE 2 — mount Whop modal */
 async function openWhopModal() {
   document.getElementById('whopModal').style.display = 'flex';
-
-  if (WHOP_PENDING_SESSION_ACTIVE) return; 
+  if (WHOP_PENDING_SESSION_ACTIVE) return;
   WHOP_PENDING_SESSION_ACTIVE = true;
-
   try {
-    // Reuse the session pre-warmed on form focus (or kick one off now).
     const { ok, data: sessionData } = await prewarmSession();
-    if (!ok || !sessionData.sessionId) {
-      throw new Error(sessionData.detail || "No checkout session returned");
-    }
+    if (!ok || !sessionData.sessionId) throw new Error(sessionData.detail || "No checkout session returned");
     WHOP_SESSION_ID = sessionData.sessionId;
     WHOP_ORDER_REF = sessionData.orderRef || "";
-
-    // Record the pending order now that the buyer has reached the payment step.
     createPendingOrder();
 
     const target = document.getElementById('whopEmbedTarget');
     const embed = document.createElement('div');
     embed.id = 'whopCheckoutEmbed';
-
     embed.setAttribute('data-whop-checkout-session', sessionData.sessionId);
     embed.setAttribute('data-whop-checkout-environment', WHOP_ENV);
     embed.setAttribute('data-whop-checkout-on-complete', 'onWhopCheckoutComplete');
     embed.setAttribute('data-whop-checkout-on-state-change', 'onWhopStateChange');
-    // Prefill the email we collected, and let Whop show + validate its own
-    // fields. Hiding a required field silently blocks Whop's Pay button.
     embed.setAttribute('data-whop-checkout-prefill-email', document.getElementById('email').value.trim());
     embed.setAttribute('data-whop-checkout-hide-price', 'true');
     embed.setAttribute('data-whop-checkout-theme', 'light');
-
     target.innerHTML = '';
     target.appendChild(embed);
-
-    if (window.WhopCheckout) {
-      window.WhopCheckout.mount();
-    }
-
+    if (window.WhopCheckout) window.WhopCheckout.mount();
   } catch(err) {
     console.error("Merchant initialization breakdown:", err);
     WHOP_PENDING_SESSION_ACTIVE = false;
@@ -346,24 +299,16 @@ window.onWhopStateChange = function(state) {
   }
 };
 
-/* Record a PENDING order in our backend before charging, so it shows in admin
-   even if the Whop webhook never fires (admin can then "Mark paid"). */
+/* Record a PENDING order before charging, so it shows in admin regardless. */
 async function createPendingOrder() {
   if (WHOP_ORDER_CREATED || !WHOP_ORDER_REF) return;
   try {
     const r = await fetch(`${BACKEND_URL}/api/orders/create-pending`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+      method:"POST", headers:{ "Content-Type":"application/json" },
       body: JSON.stringify({
-        items: items,
-        email: document.getElementById('email').value.trim(),
-        name: (document.getElementById('firstName').value.trim() + " " + document.getElementById('lastName').value.trim()).trim(),
-        currency: currency,
-        order_ref: WHOP_ORDER_REF,
-        whop_session_id: WHOP_SESSION_ID,
-        storename: params.get('storename') || "",
-        source: params.get('source') || "",
-        discount: params.get('discount') || ""
+        items, email: document.getElementById('email').value.trim(), name: "",
+        currency, order_ref: WHOP_ORDER_REF, whop_session_id: WHOP_SESSION_ID,
+        storename: params.get('storename')||"", source: params.get('source')||"", discount: params.get('discount')||""
       })
     });
     const d = await r.json().catch(()=>({}));
@@ -372,7 +317,6 @@ async function createPendingOrder() {
 }
 
 window.onWhopCheckoutComplete = function(planId, receiptId) {
-  // Whop's native Pay button completed the charge → confirmation page.
   const q = "receipt=" + encodeURIComponent(receiptId || "")
     + (WHOP_ORDER_PUBLIC_ID ? "&order=" + encodeURIComponent(WHOP_ORDER_PUBLIC_ID) : "");
   window.location.href = "/success.html?" + q;
