@@ -196,6 +196,7 @@ let WHOP_EMBED_READY = false;
 let WHOP_SESSION_ID = "";
 let WHOP_ORDER_REF = "";
 let WHOP_ORDER_CREATED = false;
+let WHOP_ORDER_PUBLIC_ID = "";
 
 function b64urlDecode(s){
   s = s.replace(/-/g,"+").replace(/_/g,"/");
@@ -365,13 +366,16 @@ async function createPendingOrder() {
         discount: params.get('discount') || ""
       })
     });
-    if (r.ok) WHOP_ORDER_CREATED = true;
+    const d = await r.json().catch(()=>({}));
+    if (r.ok) { WHOP_ORDER_CREATED = true; WHOP_ORDER_PUBLIC_ID = d.order_public_id || ""; }
   } catch (e) { console.error("Pending order create failed:", e); }
 }
 
 window.onWhopCheckoutComplete = function(planId, receiptId) {
   // Whop's native Pay button completed the charge → confirmation page.
-  window.location.href = "/success.html?receipt=" + encodeURIComponent(receiptId);
+  const q = "receipt=" + encodeURIComponent(receiptId || "")
+    + (WHOP_ORDER_PUBLIC_ID ? "&order=" + encodeURIComponent(WHOP_ORDER_PUBLIC_ID) : "");
+  window.location.href = "/success.html?" + q;
 };
 
 function closeWhopModal() {

@@ -1,4 +1,5 @@
 import enum
+import json
 import uuid
 from datetime import datetime
 
@@ -115,6 +116,16 @@ class Order(Base):
     items = relationship("OrderItem", back_populates="order", cascade="all, delete-orphan")
     payment = relationship("Payment", back_populates="order", uselist=False, cascade="all, delete-orphan")
     deliveries = relationship("Delivery", back_populates="order", cascade="all, delete-orphan")
+
+    @property
+    def store(self) -> str:
+        """Storefront name, recorded in the payment metadata at checkout."""
+        try:
+            if self.payment and self.payment.raw:
+                return json.loads(self.payment.raw).get("storename") or ""
+        except Exception:
+            pass
+        return ""
 
 
 class OrderItem(Base):

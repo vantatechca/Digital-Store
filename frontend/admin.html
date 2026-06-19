@@ -132,6 +132,10 @@
         <h3>Top products</h3>
         <div class="toplist" id="toplist"></div>
       </div>
+      <div class="panel">
+        <h3>Revenue by store</h3>
+        <div class="toplist" id="storelist"></div>
+      </div>
     </div>
 
     <!-- PRODUCTS -->
@@ -153,17 +157,23 @@
     <div class="view" id="v-orders">
       <div class="toolbar">
         <h2 class="page" style="margin:0">Orders</h2>
-        <select id="orderFilter" style="width:auto;margin:0" onchange="loadOrders()">
-          <option value="">All statuses</option>
-          <option value="pending">Pending</option>
-          <option value="paid">Paid</option>
-          <option value="delivered">Delivered</option>
-          <option value="refunded">Refunded</option>
-        </select>
+        <div style="display:flex;gap:10px">
+          <input id="orderSearch" placeholder="Search email / order id…" style="width:220px;margin:0" oninput="renderOrders()" />
+          <select id="storeFilter" style="width:auto;margin:0" onchange="renderOrders()">
+            <option value="">All stores</option>
+          </select>
+          <select id="orderFilter" style="width:auto;margin:0" onchange="loadOrders()">
+            <option value="">All statuses</option>
+            <option value="pending">Pending</option>
+            <option value="paid">Paid</option>
+            <option value="delivered">Delivered</option>
+            <option value="refunded">Refunded</option>
+          </select>
+        </div>
       </div>
       <div class="panel" style="padding:0;overflow:hidden">
         <table>
-          <thead><tr><th>Order</th><th>Customer</th><th>Items</th><th>Total</th><th>Method</th><th>Status</th><th></th></tr></thead>
+          <thead><tr><th>Order</th><th>Customer</th><th>Store</th><th>Items</th><th>Total</th><th>Method</th><th>Status</th><th></th></tr></thead>
           <tbody id="orderRows"></tbody>
         </table>
       </div>
@@ -192,6 +202,19 @@
     <div class="modal-actions">
       <button class="btn ghost" onclick="closeModal('prodModal')">Cancel</button>
       <button class="btn" onclick="saveProduct()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ORDER DETAIL MODAL -->
+<div class="modal" id="orderModal">
+  <div class="m">
+    <h3>Order <span id="odId" class="mono"></span></h3>
+    <div id="odMeta" class="hint" style="margin:-8px 0 16px"></div>
+    <div id="odDeliveries"></div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal('orderModal')">Close</button>
+      <button class="btn" id="odResendBtn" onclick="resendOrder()">Resend email</button>
     </div>
   </div>
 </div>
@@ -276,6 +299,10 @@ async function loadStats(){
   document.getElementById("toplist").innerHTML = s.top_products.length
     ? s.top_products.map(p=>`<div class="ti"><span>${esc(p.name)}</span><b>${p.units} sold</b></div>`).join("")
     : `<div style="color:var(--muted);font-size:13px">No sales yet.</div>`;
+
+  document.getElementById("storelist").innerHTML = (s.revenue_by_store && s.revenue_by_store.length)
+    ? s.revenue_by_store.map(r=>`<div class="ti"><span>${esc(r.store)}</span><b>${money(r.cents)}</b></div>`).join("")
+    : `<div style="color:var(--muted);font-size:13px">No sales yet.</div>`;
 }
 
 /* ---- products ---- */
@@ -355,29 +382,73 @@ async function saveKeys(){
 }
 
 /* ---- orders ---- */
+let orderCache = [];
 async function loadOrders(){
   const f=document.getElementById("orderFilter").value;
-  const orders = await api("/api/admin/orders"+(f?`?status=${f}`:""));
-  document.getElementById("orderRows").innerHTML = orders.map(o=>{
+  orderCache = await api("/api/admin/orders"+(f?`?status=${f}`:""));
+  // populate the store filter from the stores present in the results
+  const sel=document.getElementById("storeFilter"); const cur=sel.value;
+  const stores=[...new Set(orderCache.map(o=>o.store).filter(Boolean))].sort();
+  sel.innerHTML = `<option value="">All stores</option>` + stores.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join("");
+  sel.value = cur;
+  renderOrders();
+}
+function renderOrders(){
+  const q=(document.getElementById("orderSearch").value||"").trim().toLowerCase();
+  const store=document.getElementById("storeFilter").value;
+  const rows = orderCache.filter(o=>{
+    if(store && (o.store||"")!==store) return false;
+    if(q && !(o.email.toLowerCase().includes(q) || o.public_id.toLowerCase().includes(q))) return false;
+    return true;
+  });
+  document.getElementById("orderRows").innerHTML = rows.map(o=>{
     const items=o.items.map(i=>`${i.quantity}× ${esc(i.product_name)}`).join(", ");
-    let actions="";
-    if(o.status==="pending") actions=`<button class="btn sm" onclick="fulfill('${o.public_id}')">Mark paid</button>`;
-    else if(o.status==="paid") actions=`<button class="btn sm" onclick="fulfill('${o.public_id}')">Deliver</button>`;
+    let actions=`<button class="btn sm ghost" onclick="openOrder('${o.public_id}')">View</button>`;
+    if(o.status==="pending") actions+=` <button class="btn sm" onclick="fulfill('${o.public_id}')">Mark paid</button>`;
+    else if(o.status==="paid") actions+=` <button class="btn sm" onclick="fulfill('${o.public_id}')">Deliver</button>`;
     if(o.status==="paid"||o.status==="delivered") actions+=` <button class="btn sm danger" onclick="refund('${o.public_id}')">Refund</button>`;
     return `<tr>
       <td class="mono" style="font-size:12px">${o.public_id.slice(0,8)}</td>
       <td>${esc(o.email)}</td>
+      <td>${o.store?esc(o.store):'<span style="color:var(--muted)">—</span>'}</td>
       <td style="font-size:13px;color:var(--muted)">${items}</td>
       <td class="mono">${money(o.total_cents)}</td>
       <td><span class="stockmini">${esc(o.payment_method)}</span></td>
       <td><span class="pill ${o.status}">${o.status}</span></td>
       <td style="text-align:right;white-space:nowrap">${actions}</td>
     </tr>`;
-  }).join("") || `<tr><td colspan="7" style="color:var(--muted)">No orders.</td></tr>`;
+  }).join("") || `<tr><td colspan="8" style="color:var(--muted)">No orders.</td></tr>`;
 }
 async function fulfill(pid){ await api(`/api/admin/orders/${pid}/fulfill`,{method:"POST"}); loadOrders(); loadStats(); }
 async function refund(pid){ if(!confirm("Refund this order?"))return;
   await api(`/api/admin/orders/${pid}/refund`,{method:"POST"}); loadOrders(); loadStats(); }
+
+/* ---- order detail + resend ---- */
+let currentOrderPid = "";
+async function openOrder(pid){
+  currentOrderPid = pid;
+  const o = orderCache.find(x=>x.public_id===pid) || {};
+  document.getElementById("odId").textContent = pid.slice(0,8);
+  document.getElementById("odMeta").textContent = `${o.email||""} · ${o.store||"—"} · ${money(o.total_cents||0)} · ${o.status||""}`;
+  document.getElementById("odDeliveries").innerHTML = `<div style="color:var(--muted);font-size:13px">Loading…</div>`;
+  document.getElementById("orderModal").classList.add("on");
+  try{
+    const data = await api("/api/orders/"+pid);
+    const ds = data.deliveries||[];
+    document.getElementById("odDeliveries").innerHTML = ds.length ? ds.map(d=>{
+      const inner = d.delivery_type==="file_download"
+        ? `<a href="${esc(d.payload)}" target="_blank" style="word-break:break-all">${esc(d.payload)}</a>`
+        : `<span class="mono" style="word-break:break-all">${esc(d.payload)}</span>`;
+      return `<div class="panel" style="padding:12px;margin-bottom:8px"><div class="stockmini" style="margin-bottom:4px">${esc(d.product_name)} · ${d.delivery_type.replace('_',' ')}</div>${inner}</div>`;
+    }).join("") : `<div style="color:var(--muted);font-size:13px">Nothing delivered yet — order isn't fulfilled.</div>`;
+    document.getElementById("odResendBtn").style.display = ds.length ? "inline-block" : "none";
+  }catch(e){ document.getElementById("odDeliveries").innerHTML = `<div class="err">${e.message}</div>`; }
+}
+async function resendOrder(){
+  if(!currentOrderPid) return;
+  try{ await api(`/api/admin/orders/${currentOrderPid}/resend`,{method:"POST"}); alert("Confirmation email re-sent."); }
+  catch(e){ alert(e.message); }
+}
 
 function closeModal(id){ document.getElementById(id).classList.remove("on"); }
 function esc(s){return (s||"").replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}

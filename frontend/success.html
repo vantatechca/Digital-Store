@@ -9,26 +9,19 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 <style>
   :root {
-    --bg-main: #f9fafb;
-    --bg-card: #ffffff;
-    --text-main: #111827;
-    --text-muted: #4b5563;
-    --border-color: #e5e7eb;
-    --good: #16a34a;
-    --radius-lg: 12px;
-    --radius-md: 8px;
+    --bg-main: #f9fafb; --bg-card: #ffffff; --text-main: #111827; --text-muted: #4b5563;
+    --border-color: #e5e7eb; --good: #16a34a; --accent:#111827; --radius-lg: 12px; --radius-md: 8px;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     background: var(--bg-main); color: var(--text-main);
-    font-family: Inter, system-ui, sans-serif; line-height: 1.5;
-    -webkit-font-smoothing: antialiased;
+    font-family: Inter, system-ui, sans-serif; line-height: 1.5; -webkit-font-smoothing: antialiased;
     min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px;
   }
   .mono { font-family: "IBM Plex Mono", monospace; }
   .card {
     background: var(--bg-card); border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg); padding: 40px 36px; max-width: 480px; width: 100%;
+    border-radius: var(--radius-lg); padding: 40px 36px; max-width: 520px; width: 100%;
     text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
   }
   .check {
@@ -38,8 +31,24 @@
     animation: pop .35s cubic-bezier(0.16,1,0.3,1);
   }
   @keyframes pop { from { transform: scale(0.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  @keyframes spin { to { transform: rotate(360deg); } }
   h1 { font-size: 24px; font-weight: 700; letter-spacing: -.02em; margin-bottom: 8px; }
   p { color: var(--text-muted); font-size: 15px; }
+
+  /* delivered goods */
+  .goods { text-align: left; margin-top: 24px; display: none; }
+  .goods h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); margin-bottom: 12px; }
+  .deliv { background: var(--bg-main); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px; margin-bottom: 10px; }
+  .deliv .dt { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
+  .keychip { font-family: "IBM Plex Mono", monospace; background: #fff; border: 1px dashed #bbb; padding: 10px 12px; border-radius: 8px;
+    font-size: 14px; word-break: break-all; display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+  .copy { background: none; border: 1px solid var(--border-color); color: var(--text-muted); border-radius: 6px; padding: 4px 8px; cursor: pointer; font-size: 11px; white-space: nowrap; }
+  .dl { display: inline-block; background: var(--accent); color: #fff; text-decoration: none; padding: 10px 16px; border-radius: 8px; font-weight: 600; font-size: 14px; }
+  .access { white-space: pre-wrap; font-size: 13px; color: var(--text-main); }
+
+  .prep { margin-top: 22px; display: flex; align-items: center; justify-content: center; gap: 10px; color: var(--text-muted); font-size: 14px; }
+  .spinner { width: 16px; height: 16px; border: 2px solid #e5e7eb; border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
+
   .receipt {
     margin: 24px 0 8px; padding: 14px 16px; background: var(--bg-main);
     border: 1px solid var(--border-color); border-radius: var(--radius-md);
@@ -54,19 +63,58 @@
   <div class="card">
     <div class="check">✓</div>
     <h1>Payment confirmed</h1>
-    <p>Thank you! Your order is complete. A confirmation and your digital goods are on their way to your email.</p>
+    <p>Thank you! Your order is complete — your goods are below and a copy has been emailed to you.</p>
+
+    <div class="goods" id="goods"></div>
+    <div class="prep" id="prep"><span class="spinner"></span> Preparing your goods…</div>
+
     <div class="receipt" id="receiptRow" style="display:none">
       <span class="label">Receipt</span>
       <span class="val mono" id="receiptId"></span>
     </div>
-    <p class="note">Keep this receipt for your records. Didn't get an email within a few minutes? Check your spam folder.</p>
+    <p class="note">Keep this page/email — your links &amp; keys are above. Didn't get the email? Check spam.</p>
   </div>
 <script>
-  const receipt = new URLSearchParams(location.search).get("receipt");
+  const params = new URLSearchParams(location.search);
+  const receipt = params.get("receipt");
+  const order = params.get("order");
+
   if (receipt) {
     document.getElementById("receiptId").textContent = receipt;
     document.getElementById("receiptRow").style.display = "flex";
   }
+
+  function esc(s){return (s==null?"":""+s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+  function copy(t,b){ navigator.clipboard.writeText(t); b.textContent="copied"; setTimeout(()=>b.textContent="copy",1200); }
+
+  function renderGoods(ds){
+    document.getElementById("prep").style.display = "none";
+    const el = document.getElementById("goods");
+    el.style.display = "block";
+    el.innerHTML = "<h2>Your goods</h2>" + ds.map(d=>{
+      let inner;
+      if (d.delivery_type === "file_download") inner = `<a class="dl" href="${esc(d.payload)}" target="_blank" rel="noopener">Download</a>`;
+      else if (d.delivery_type === "license_key") inner = `<div class="keychip"><span>${esc(d.payload)}</span><button class="copy" onclick="copy('${esc(d.payload)}',this)">copy</button></div>`;
+      else inner = `<div class="access">${esc(d.payload)}</div>`;
+      return `<div class="deliv"><div class="dt">${esc(d.product_name)} · ${d.delivery_type.replace('_',' ')}</div>${inner}</div>`;
+    }).join("");
+  }
+
+  // Goods are fulfilled when the order is marked paid (webhook). Poll briefly.
+  async function poll(tries){
+    try{
+      const r = await fetch(`/api/orders/${order}`);
+      if (r.ok){
+        const d = await r.json();
+        if (d.deliveries && d.deliveries.length){ renderGoods(d.deliveries); return; }
+      }
+    }catch(e){}
+    if (tries < 12) setTimeout(()=>poll(tries+1), 2500);
+    else document.getElementById("prep").innerHTML = "Your goods are being prepared and will arrive by email shortly.";
+  }
+
+  if (order) poll(0);
+  else document.getElementById("prep").innerHTML = "A copy of your goods has been emailed to you.";
 </script>
 </body>
 </html>

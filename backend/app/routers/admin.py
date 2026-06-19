@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from ..auth import create_access_token, require_admin, verify_password
 from ..database import get_db
-from ..delivery import fulfill_order
+from ..delivery import fulfill_order, _send_confirmation_email
 from ..models import (
     Admin, Customer, Delivery, LicenseKey, Order, OrderStatus, Product
 )
@@ -116,6 +116,17 @@ def refund(public_id: str, db: Session = Depends(get_db), _: Admin = Depends(req
     return order
 
 
+@router.post("/orders/{public_id}/resend", response_model=OrderOut)
+def resend_email(public_id: str, db: Session = Depends(get_db), _: Admin = Depends(require_admin)):
+    order = db.query(Order).filter(Order.public_id == public_id).first()
+    if not order:
+        raise HTTPException(404, "Not found")
+    if not order.deliveries:
+        raise HTTPException(400, "Nothing has been delivered for this order yet")
+    _send_confirmation_email(order, order.deliveries)
+    return order
+
+
 # ---------- Stats ----------
 @router.get("/stats", response_model=StatsOut)
 def stats(db: Session = Depends(get_db), _: Admin = Depends(require_admin)):
@@ -152,6 +163,15 @@ def stats(db: Session = Depends(get_db), _: Admin = Depends(require_admin)):
     )
     top_products = [{"name": name, "units": units} for name, units in top]
 
+    # revenue grouped by storefront (parsed from payment metadata)
+    store_rev: dict[str, int] = defaultdict(int)
+    for o in db.query(Order).filter(Order.status.in_(paid_states)).all():
+        store_rev[o.store or "—"] += o.total_cents
+    revenue_by_store = sorted(
+        ({"store": s, "cents": c} for s, c in store_rev.items()),
+        key=lambda x: -x["cents"],
+    )[:10]
+
     return StatsOut(
         revenue_cents=revenue,
         orders_total=orders_total,
@@ -161,4 +181,5 @@ def stats(db: Session = Depends(get_db), _: Admin = Depends(require_admin)):
         products_active=products_active,
         revenue_by_day=revenue_by_day,
         top_products=top_products,
+        revenue_by_store=revenue_by_store,
     )

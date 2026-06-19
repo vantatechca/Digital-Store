@@ -127,6 +127,7 @@ class OrderItemOut(BaseModel):
 class OrderOut(BaseModel):
     public_id: str
     email: str
+    store: str = ""
     total_cents: int
     currency: str
     status: OrderStatus
@@ -148,3 +149,4 @@ class StatsOut(BaseModel):
     products_active: int
     revenue_by_day: List[dict] = []
     top_products: List[dict] = []
+    revenue_by_store: List[dict] = []
