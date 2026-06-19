@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="preconnect" href="https://js.whop.com" crossorigin />
 <link rel="preconnect" href="https://whop.com" crossorigin />
+<link rel="preconnect" href="https://sandbox.whop.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 <script async defer src="https://js.whop.com/static/checkout/loader.js"></script>
 <style>
@@ -87,15 +88,15 @@
   .submit-main-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
   /* ─── MODAL DIALOG POPUP OVERLAY ─── */
-  .whop-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 99999; display: none; align-items: center; justify-content: center; padding: 16px; backdrop-filter: blur(4px); }
-  .whop-modal-box { background: #fff; border-radius: 14px; width: 100%; max-width: 440px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); overflow: hidden; }
-  .whop-modal-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 24px; border-bottom: 1px solid var(--border-color); }
+  .whop-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 99999; display: none; align-items: flex-start; justify-content: center; padding: 24px 16px; overflow-y: auto; backdrop-filter: blur(4px); }
+  .whop-modal-box { background: #fff; border-radius: 14px; width: 100%; max-width: 440px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); margin: auto; max-height: calc(100vh - 48px); display: flex; flex-direction: column; overflow: hidden; }
+  .whop-modal-header { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; padding: 18px 24px; border-bottom: 1px solid var(--border-color); background: #fff; }
   .whop-modal-header h3 { font-size: 16px; font-weight: 600; }
   .close-modal-btn { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--text-muted); }
-  .whop-modal-body { padding: 24px; }
+  .whop-modal-body { padding: 24px; flex: 1 1 auto; overflow-y: auto; overflow-x: hidden; }
   
   /* Iframe target wrapper container */
-  .whop-embed-wrap { position: relative; min-height: 230px; background: #f9fafb; border-radius: var(--radius-md); overflow: hidden; margin-bottom: 20px; }
+  .whop-embed-wrap { position: relative; min-height: 230px; background: #f9fafb; border-radius: var(--radius-md); overflow: visible; margin-bottom: 4px; }
   .whop-loader-spinner { width: 24px; height: 24px; border: 3px solid #e5e7eb; border-top-color: #111827; border-radius: 50%; animation: spin 0.8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
   /* inline spinner shown inside a button while it's working */
@@ -221,6 +222,29 @@ function init(){
   
   const total = items.reduce((s,it)=>s + it.unitPrice*it.quantity, 0);
   document.getElementById("total").textContent = money(total);
+
+  // Warm up the Whop session as soon as the buyer engages the form, so the
+  // payment modal mounts instantly instead of waiting on a round-trip.
+  document.getElementById("main-layout").addEventListener("focusin", prewarmSession, { once: true });
+}
+
+// Pre-create the Whop checkout session in the background (memoized).
+let SESSION_PREWARM = null;
+function prewarmSession(){
+  if (SESSION_PREWARM) return SESSION_PREWARM;
+  SESSION_PREWARM = fetch(`${BACKEND_URL}/api/payments/create-whop-session`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      items: items,
+      currency: currency,
+      storename: params.get('storename') || "",
+      source: params.get('source') || ""
+    })
+  })
+    .then(async r => ({ ok: r.ok, data: await r.json() }))
+    .catch(e => ({ ok: false, data: { detail: e.message } }));
+  return SESSION_PREWARM;
 }
 
 function esc(s){return (s==null?"":""+s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
@@ -264,19 +288,9 @@ async function openWhopModal() {
   WHOP_PENDING_SESSION_ACTIVE = true;
 
   try {
-    // Connect explicitly to your absolute live FastAPI server domain URL string
-    const response = await fetch(`${BACKEND_URL}/api/payments/create-whop-session`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        items: items,
-        currency: currency,
-        storename: params.get('storename') || "",
-        source: params.get('source') || ""
-      })
-    });
-    const sessionData = await response.json();
-    if (!response.ok || !sessionData.sessionId) {
+    // Reuse the session pre-warmed on form focus (or kick one off now).
+    const { ok, data: sessionData } = await prewarmSession();
+    if (!ok || !sessionData.sessionId) {
       throw new Error(sessionData.detail || "No checkout session returned");
     }
     WHOP_SESSION_ID = sessionData.sessionId;
