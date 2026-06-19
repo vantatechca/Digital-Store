@@ -7,17 +7,14 @@ from sqlalchemy.orm import Session
 from ..config import get_settings
 from ..database import get_db
 from ..models import Delivery, DeliveryType, Order, Product
+from ..schemas import OrderLookupIn
 from .. import storage
 
 settings = get_settings()
 router = APIRouter(prefix="/api", tags=["public"])
 
 
-@router.get("/orders/{public_id}")
-def get_order(public_id: str, db: Session = Depends(get_db)):
-    order = db.query(Order).filter(Order.public_id == public_id).first()
-    if not order:
-        raise HTTPException(404, "Order not found")
+def _order_payload(order: Order) -> dict:
     return {
         "order_public_id": order.public_id,
         "status": order.status,
@@ -28,6 +25,23 @@ def get_order(public_id: str, db: Session = Depends(get_db)):
             for d in order.deliveries
         ],
     }
+
+
+@router.get("/orders/{public_id}")
+def get_order(public_id: str, db: Session = Depends(get_db)):
+    order = db.query(Order).filter(Order.public_id == public_id).first()
+    if not order:
+        raise HTTPException(404, "Order not found")
+    return _order_payload(order)
+
+
+@router.post("/order-lookup")
+def order_lookup(payload: OrderLookupIn, db: Session = Depends(get_db)):
+    """Self-serve re-download — requires both the order id and the buyer's email."""
+    order = db.query(Order).filter(Order.public_id == payload.order_id.strip()).first()
+    if not order or order.email.lower() != payload.email.strip().lower():
+        raise HTTPException(404, "No order found for that order id + email")
+    return _order_payload(order)
 
 
 @router.get("/download/{token}")

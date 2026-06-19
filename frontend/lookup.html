@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Find My Order</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg-main:#f9fafb; --bg-card:#ffffff; --text-main:#111827; --text-muted:#4b5563;
+    --border-color:#e5e7eb; --good:#16a34a; --bad:#dc2626; --accent:#111827; --radius-lg:12px; --radius-md:8px;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg-main); color:var(--text-main); font-family:Inter,system-ui,sans-serif; line-height:1.5; -webkit-font-smoothing:antialiased;
+    min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:40px 24px; }
+  .mono { font-family:"IBM Plex Mono",monospace; }
+  .card { background:var(--bg-card); border:1px solid var(--border-color); border-radius:var(--radius-lg); padding:32px; max-width:520px; width:100%; box-shadow:0 1px 3px rgba(0,0,0,0.05); }
+  h1 { font-size:22px; font-weight:700; letter-spacing:-.02em; margin-bottom:4px; }
+  .sub { color:var(--text-muted); font-size:14px; margin-bottom:24px; }
+  label { font-size:12px; color:var(--text-muted); font-weight:500; }
+  input { width:100%; padding:12px 14px; border:1px solid var(--border-color); border-radius:var(--radius-md); font-size:14px; font-family:inherit; margin:4px 0 16px; outline:none; }
+  input:focus { border-color:var(--accent); }
+  .btn { width:100%; padding:14px; background:var(--accent); color:#fff; border:none; border-radius:var(--radius-md); font-size:15px; font-weight:600; cursor:pointer; }
+  .btn:disabled { opacity:.6; cursor:not-allowed; }
+  .err { color:var(--bad); font-size:13px; margin-top:12px; }
+  .goods { margin-top:24px; }
+  .goods h2 { font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted); margin-bottom:12px; }
+  .deliv { background:var(--bg-main); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:14px; margin-bottom:10px; }
+  .deliv .dt { font-size:12px; color:var(--text-muted); margin-bottom:8px; }
+  .keychip { font-family:"IBM Plex Mono",monospace; background:#fff; border:1px dashed #bbb; padding:10px 12px; border-radius:8px; font-size:14px; word-break:break-all; display:flex; justify-content:space-between; gap:10px; align-items:center; }
+  .copy { background:none; border:1px solid var(--border-color); color:var(--text-muted); border-radius:6px; padding:4px 8px; cursor:pointer; font-size:11px; white-space:nowrap; }
+  .dl { display:inline-block; background:var(--accent); color:#fff; text-decoration:none; padding:10px 16px; border-radius:8px; font-weight:600; font-size:14px; }
+  .access { white-space:pre-wrap; font-size:13px; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>Find my order</h1>
+    <p class="sub">Lost your download? Enter your email and order id (both are in your confirmation email) to get your goods again.</p>
+    <label>Email</label>
+    <input type="email" id="email" placeholder="you@example.com" />
+    <label>Order ID</label>
+    <input type="text" id="orderId" class="mono" placeholder="e.g. 97fb00e3e1c2…" />
+    <button class="btn" id="btn" onclick="lookup()">Find my order</button>
+    <div class="err" id="err" style="display:none"></div>
+    <div class="goods" id="goods" style="display:none"></div>
+  </div>
+<script>
+  function esc(s){return (s==null?"":""+s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+  function copy(t,b){ navigator.clipboard.writeText(t); b.textContent="copied"; setTimeout(()=>b.textContent="copy",1200); }
+
+  async function lookup(){
+    const email=document.getElementById("email").value.trim();
+    const orderId=document.getElementById("orderId").value.trim();
+    const err=document.getElementById("err"); const goods=document.getElementById("goods"); const btn=document.getElementById("btn");
+    err.style.display="none"; goods.style.display="none";
+    if(!email || !orderId){ err.textContent="Enter both your email and order id."; err.style.display="block"; return; }
+    btn.disabled=true; btn.textContent="Searching…";
+    try{
+      const r=await fetch("/api/order-lookup",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({order_id:orderId,email})});
+      if(!r.ok){ const e=await r.json().catch(()=>({})); throw new Error(e.detail||"Not found"); }
+      const d=await r.json();
+      const ds=d.deliveries||[];
+      if(!ds.length){ err.textContent="This order isn't fulfilled yet — please check back shortly."; err.style.display="block"; return; }
+      goods.innerHTML="<h2>Your goods</h2>"+ds.map(x=>{
+        const inner = x.delivery_type==="file_download"
+          ? `<a class="dl" href="${esc(x.payload)}" target="_blank" rel="noopener">Download</a>`
+          : x.delivery_type==="license_key"
+            ? `<div class="keychip"><span>${esc(x.payload)}</span><button class="copy" onclick="copy('${esc(x.payload)}',this)">copy</button></div>`
+            : `<div class="access">${esc(x.payload)}</div>`;
+        return `<div class="deliv"><div class="dt">${esc(x.product_name)} · ${x.delivery_type.replace('_',' ')}</div>${inner}</div>`;
+      }).join("");
+      goods.style.display="block";
+    }catch(e){ err.textContent=e.message; err.style.display="block"; }
+    finally{ btn.disabled=false; btn.textContent="Find my order"; }
+  }
+  document.getElementById("orderId").addEventListener("keydown",e=>{ if(e.key==="Enter") lookup(); });
+</script>
+</body>
+</html>

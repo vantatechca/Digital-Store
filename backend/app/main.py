@@ -155,5 +155,10 @@ def success_page():
     return FileResponse(FRONTEND_DIR / "success.html")
 
 
+@app.get("/lookup.html")
+def lookup_page():
+    return FileResponse(FRONTEND_DIR / "lookup.html")
+
+
 if FRONTEND_DIR.exists():
     app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")

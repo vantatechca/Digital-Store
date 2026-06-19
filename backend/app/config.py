@@ -31,8 +31,8 @@ class Settings(BaseSettings):
     # https://api.whop.com (production) or https://sandbox-api.whop.com (sandbox/test)
     whop_api_base: str = "https://api.whop.com"
 
-    download_token_ttl_hours: int = 72
-    max_downloads_per_item: int = 3
+    download_token_ttl_hours: int = 720   # 30 days — buyer-friendly; security comes from streaming + unguessable tokens
+    max_downloads_per_item: int = 10
 
     # Cloudflare R2 (S3-compatible) for hosting downloadable files.
     # When set, a delivery rule's download_url that is an object KEY (not http…)

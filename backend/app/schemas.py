@@ -79,6 +79,12 @@ class CheckoutIn(BaseModel):
     discount: str = ""
 
 
+# Self-serve re-download: buyer proves ownership with order id + email.
+class OrderLookupIn(BaseModel):
+    order_id: str
+    email: EmailStr
+
+
 # Buyer clicked Pay → we record a PENDING order before handing off to Whop.
 class PendingOrderIn(BaseModel):
     items: List[CheckoutItemIn]

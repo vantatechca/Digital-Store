@@ -124,6 +124,8 @@ def _send_confirmation_email(order: Order, deliveries: list[Delivery]) -> None:
         f"Thanks for your order {order.public_id}!\n\n"
         + "\n".join(lines)
         + "\n\nKeep this email — your links/keys are above."
+        + f"\n\nLost your download? Re-download anytime at {settings.base_url}/lookup.html"
+        + f"\nUse your email and order id: {order.public_id}"
     )
 
     if not settings.resend_api_key:
