@@ -37,11 +37,13 @@ class Settings(BaseSettings):
     # Cloudflare R2 (S3-compatible) for hosting downloadable files.
     # When set, a delivery rule's download_url that is an object KEY (not http…)
     # is served via a short-lived signed URL so files can't be reshared.
-    r2_account_id: str = ""
+    # Works with any S3-compatible host (Cloudflare R2, Supabase Storage, Backblaze…).
+    r2_account_id: str = ""             # R2 only (used to build the default endpoint)
     r2_access_key_id: str = ""
     r2_secret_access_key: str = ""
     r2_bucket: str = ""
-    r2_endpoint: str = ""               # optional; defaults to https://<account>.r2.cloudflarestorage.com
+    r2_endpoint: str = ""               # full S3 endpoint (required for non-R2, e.g. Supabase)
+    r2_region: str = "auto"             # "auto" for R2; the project region for Supabase (e.g. us-east-1)
     download_presign_ttl_seconds: int = 300
 
     access_token_ttl_minutes: int = 60 * 12

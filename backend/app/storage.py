@@ -16,20 +16,23 @@ settings = get_settings()
 
 @lru_cache
 def _client():
-    """Lazily build the S3 client for R2, or None if R2 isn't configured."""
-    if not (settings.r2_account_id and settings.r2_access_key_id
-            and settings.r2_secret_access_key and settings.r2_bucket):
+    """Lazily build the S3 client (R2 / Supabase / any S3-compatible host)."""
+    if not (settings.r2_access_key_id and settings.r2_secret_access_key and settings.r2_bucket):
+        return None
+    endpoint = settings.r2_endpoint or (
+        f"https://{settings.r2_account_id}.r2.cloudflarestorage.com" if settings.r2_account_id else ""
+    )
+    if not endpoint:
         return None
     import boto3
     from botocore.config import Config
 
-    endpoint = settings.r2_endpoint or f"https://{settings.r2_account_id}.r2.cloudflarestorage.com"
     return boto3.client(
         "s3",
         endpoint_url=endpoint,
         aws_access_key_id=settings.r2_access_key_id,
         aws_secret_access_key=settings.r2_secret_access_key,
-        region_name="auto",
+        region_name=settings.r2_region or "auto",
         config=Config(signature_version="s3v4"),
     )
 
