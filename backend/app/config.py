@@ -23,6 +23,14 @@ class Settings(BaseSettings):
     nowpayments_ipn_secret: str = ""
     enable_test_provider: bool = True
 
+    # Whop embedded checkout
+    whop_api_key: str = ""
+    whop_product_id: str = ""       # prod_… (the inline price is attached to this product)
+    whop_plan_id: str = ""          # plan_… (optional; kept for reference)
+    whop_webhook_secret: str = ""   # Standard Webhooks signing secret from the Whop dashboard
+    # https://api.whop.com (production) or https://sandbox-api.whop.com (sandbox/test)
+    whop_api_base: str = "https://api.whop.com"
+
     download_token_ttl_hours: int = 72
     max_downloads_per_item: int = 5
 

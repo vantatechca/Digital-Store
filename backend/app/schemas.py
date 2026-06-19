@@ -79,6 +79,19 @@ class CheckoutIn(BaseModel):
     discount: str = ""
 
 
+# Buyer clicked Pay → we record a PENDING order before handing off to Whop.
+class PendingOrderIn(BaseModel):
+    items: List[CheckoutItemIn]
+    email: EmailStr
+    name: str = ""
+    currency: str = "USD"
+    order_ref: str                                 # ties the order to the Whop session
+    whop_session_id: str = ""
+    storename: str = ""
+    source: str = ""
+    discount: str = ""
+
+
 class DeliveryOut(BaseModel):
     product_name: str
     delivery_type: DeliveryType
