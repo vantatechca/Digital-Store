@@ -222,8 +222,8 @@ let items = [];
 
 // Use the local server when developing (same origin → no CORS); the deployed
 // Render backend otherwise.
-const isLocal = ["localhost", "127.0.0.1"].includes(location.hostname);
-const BACKEND_URL = isLocal ? "" : "https://digital-store-backend-0tk9.onrender.com";
+// This page is served by the backend, so all API calls are same-origin (no CORS).
+const BACKEND_URL = "";
 
 // "sandbox" while testing (must match the backend's WHOP_API_BASE + a sandbox
 // plan id), "production" when live.
