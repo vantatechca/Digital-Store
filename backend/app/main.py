@@ -68,11 +68,12 @@ async def create_whop_session(payload: SessionPayload, db: Session = Depends(get
     )
     total_amount = round(total_cents / 100, 2)
 
-    if not settings.whop_product_id or not settings.whop_api_key:
-        raise HTTPException(status_code=500, detail="Whop is not configured (WHOP_API_KEY / WHOP_PRODUCT_ID).")
+    product_id = settings.product_for_currency(payload.currency)
+    if not product_id or not settings.whop_api_key:
+        raise HTTPException(status_code=500, detail="Whop is not configured for this currency (WHOP_API_KEY / WHOP_PRODUCT_ID / WHOP_PRODUCTS).")
 
-    # Define an inline one-time price on the product so a single product can
-    # charge any cart total. `price` must be an object, not a bare number.
+    # Define an inline one-time price on the per-currency product so a single
+    # product can charge any cart total. `price` must be an object, not a number.
     url = f"{settings.whop_api_base}/api/v2/checkout_sessions"
     headers = {
         "Authorization": f"Bearer {settings.whop_api_key}",

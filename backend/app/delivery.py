@@ -6,6 +6,7 @@ Three delivery types:
   - access_grant  -> render the product's access template
 Then email the buyer a single confirmation with everything.
 """
+import html
 import json
 import secrets
 from datetime import datetime, timedelta
@@ -110,6 +111,42 @@ def _store_name(order: Order) -> str:
     return settings.mail_from_name
 
 
+def _email_html(order: Order, deliveries: list[Delivery], from_name: str) -> str:
+    e = html.escape
+    rows = []
+    for d in deliveries:
+        if d.delivery_type == DeliveryType.file_download:
+            inner = (f'<a href="{e(d.payload)}" style="display:inline-block;background:#0f172a;color:#ffffff;'
+                     f'text-decoration:none;padding:11px 20px;border-radius:8px;font-weight:600;font-size:14px">Download</a>')
+        elif d.delivery_type == DeliveryType.license_key:
+            inner = (f'<div style="font-family:Menlo,Consolas,monospace;background:#f6f7f9;border:1px dashed #cbd5e1;'
+                     f'border-radius:8px;padding:11px 13px;font-size:14px;word-break:break-all;color:#0f172a">{e(d.payload)}</div>')
+        else:
+            inner = f'<div style="white-space:pre-wrap;font-size:14px;color:#334155">{e(d.payload)}</div>'
+        rows.append(
+            f'<tr><td style="padding:16px 0;border-bottom:1px solid #e7e9ee">'
+            f'<div style="font-size:12px;color:#64748b;margin-bottom:8px">{e(d.product_name)}</div>{inner}</td></tr>'
+        )
+    lookup = f"{settings.base_url}/lookup.html"
+    return f"""<!doctype html><html><body style="margin:0;background:#f6f7f9;font-family:Inter,Arial,sans-serif;color:#0f172a">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f7f9;padding:28px 12px">
+    <tr><td align="center">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border:1px solid #e7e9ee;border-radius:14px;overflow:hidden">
+        <tr><td style="padding:24px 28px;border-bottom:1px solid #e7e9ee;font-weight:700;font-size:18px">{e(from_name)}</td></tr>
+        <tr><td style="padding:28px">
+          <div style="font-size:20px;font-weight:700;margin-bottom:6px">Your order is ready ✅</div>
+          <div style="font-size:14px;color:#64748b;margin-bottom:8px">Order <span style="font-family:monospace">{e(order.public_id)}</span></div>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">{''.join(rows)}</table>
+          <div style="font-size:13px;color:#64748b;margin-top:20px">Keep this email — your links and keys are above.</div>
+          <div style="font-size:13px;color:#64748b;margin-top:8px">Lost your download? <a href="{lookup}" style="color:#0f172a;font-weight:600">Find your order</a> anytime using this email and your order id.</div>
+        </td></tr>
+        <tr><td style="padding:16px 28px;border-top:1px solid #e7e9ee;font-size:12px;color:#94a3b8">{e(from_name)} · secure digital delivery</td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>"""
+
+
 def _send_confirmation_email(order: Order, deliveries: list[Delivery]) -> None:
     from_name = _store_name(order)
     lines = []
@@ -144,6 +181,7 @@ def _send_confirmation_email(order: Order, deliveries: list[Delivery]) -> None:
                 "to": [order.email],
                 "subject": f"Your {from_name} order {order.public_id}",
                 "text": body,
+                "html": _email_html(order, deliveries, from_name),
             },
             timeout=15,
         )

@@ -1,3 +1,4 @@
+import json
 from functools import lru_cache
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -25,7 +26,10 @@ class Settings(BaseSettings):
 
     # Whop embedded checkout
     whop_api_key: str = ""
-    whop_product_id: str = ""       # prod_… (the inline price is attached to this product)
+    whop_product_id: str = ""       # prod_… default product (used when no per-currency match)
+    # Per-currency products as JSON, e.g. {"USD":"prod_aaa","CAD":"prod_bbb"}.
+    # Each product must be created in that currency in Whop.
+    whop_products: str = ""
     whop_plan_id: str = ""          # plan_… (optional; kept for reference)
     whop_webhook_secret: str = ""   # Standard Webhooks signing secret from the Whop dashboard
     # https://api.whop.com (production) or https://sandbox-api.whop.com (sandbox/test)
@@ -47,6 +51,19 @@ class Settings(BaseSettings):
     download_presign_ttl_seconds: int = 60
 
     access_token_ttl_minutes: int = 60 * 12
+
+
+    def product_for_currency(self, currency: str) -> str:
+        """The Whop product id to charge in `currency` (falls back to the default)."""
+        cur = (currency or "").upper()
+        if self.whop_products:
+            try:
+                mapping = {k.upper(): v for k, v in json.loads(self.whop_products).items()}
+                if mapping.get(cur):
+                    return mapping[cur]
+            except Exception:
+                pass
+        return self.whop_product_id
 
 
 @lru_cache
