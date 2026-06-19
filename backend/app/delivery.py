@@ -98,7 +98,20 @@ def _deliver_one(db: Session, order: Order, item: OrderItem, product: Product | 
     return d
 
 
+def _store_name(order: Order) -> str:
+    """The storefront name recorded with the payment, used as the email From name."""
+    try:
+        if order.payment and order.payment.raw:
+            name = (json.loads(order.payment.raw).get("storename") or "").strip()
+            if name:
+                return name
+    except Exception:
+        pass
+    return settings.mail_from_name
+
+
 def _send_confirmation_email(order: Order, deliveries: list[Delivery]) -> None:
+    from_name = _store_name(order)
     lines = []
     for d in deliveries:
         if d.delivery_type == DeliveryType.license_key:
@@ -115,7 +128,7 @@ def _send_confirmation_email(order: Order, deliveries: list[Delivery]) -> None:
 
     if not settings.resend_api_key:
         print("\n----- [DEV EMAIL] -----")
-        print(f"To: {order.email}\nFrom: {settings.mail_from}\nSubject: Your order {order.public_id}")
+        print(f"To: {order.email}\nFrom: {from_name} <{settings.mail_from}>\nSubject: Your {from_name} order {order.public_id}")
         print(body)
         print("-----------------------\n")
         return
@@ -125,9 +138,9 @@ def _send_confirmation_email(order: Order, deliveries: list[Delivery]) -> None:
             "https://api.resend.com/emails",
             headers={"Authorization": f"Bearer {settings.resend_api_key}"},
             json={
-                "from": f"{settings.mail_from_name} <{settings.mail_from}>",
+                "from": f"{from_name} <{settings.mail_from}>",
                 "to": [order.email],
-                "subject": f"Your order {order.public_id}",
+                "subject": f"Your {from_name} order {order.public_id}",
                 "text": body,
             },
             timeout=15,
