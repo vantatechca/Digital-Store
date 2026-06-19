@@ -293,11 +293,9 @@ async function openWhopModal() {
     embed.setAttribute('data-whop-checkout-environment', WHOP_ENV);
     embed.setAttribute('data-whop-checkout-on-complete', 'onWhopCheckoutComplete');
     embed.setAttribute('data-whop-checkout-on-state-change', 'onWhopStateChange');
-
-    // We collect email + show our own order summary; let Whop render its own
-    // (reliable) Pay button to actually submit the charge.
-    embed.setAttribute('data-whop-checkout-hide-email', 'true');
-    embed.setAttribute('data-whop-checkout-hide-address', 'true');
+    // Prefill the email we collected, and let Whop show + validate its own
+    // fields. Hiding a required field silently blocks Whop's Pay button.
+    embed.setAttribute('data-whop-checkout-prefill-email', document.getElementById('email').value.trim());
     embed.setAttribute('data-whop-checkout-hide-price', 'true');
     embed.setAttribute('data-whop-checkout-theme', 'light');
 
@@ -323,18 +321,8 @@ window.onWhopStateChange = function(state) {
     WHOP_EMBED_READY = true;
     document.getElementById('whopLoadingOverlay').style.display = 'none';
     setLoading(document.getElementById('submitBtn'), false);
-    syncMetadataToWhop();
   }
 };
-
-function syncMetadataToWhop() {
-  const elementId = 'whopCheckoutEmbed';
-  if (window.wco) {
-    // Digital goods: we only prefill the email; Whop's card field collects any
-    // billing info (e.g. ZIP) it needs for the charge.
-    window.wco.setEmail(elementId, document.getElementById('email').value.trim());
-  }
-}
 
 /* Record a PENDING order in our backend before charging, so it shows in admin
    even if the Whop webhook never fires (admin can then "Mark paid"). */
