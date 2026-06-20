@@ -242,14 +242,19 @@
 
     <!-- PRODUCTS -->
     <div class="view" id="v-products">
-      <div class="toolbar">
-        <h2 class="page" style="margin:0">Delivery rules</h2>
+      <div class="welcome">
+        <div>
+          <h2>Delivery rules</h2>
+          <p>Map each Shopify SKU to the digital goods it delivers.</p>
+        </div>
+        <img src="/static/illustrations/admin.svg" alt="" />
+      </div>
+      <div class="toolbar" style="justify-content:flex-end">
         <div style="display:flex;gap:10px;align-items:center">
           <input id="prodSearch" placeholder="Search name / SKU…" style="width:220px;margin:0" oninput="prodPage=1;renderProducts()" />
           <button class="btn" onclick="openProduct()">+ New rule</button>
         </div>
       </div>
-      <p class="hint" style="margin:-8px 0 16px">Each rule maps a Shopify SKU to how this app fulfills it.</p>
       <div class="bulkbar" id="prodBulk">
         <span class="cnt" id="prodBulkCount">0 selected</span>
         <span class="spacer"></span>
@@ -269,8 +274,14 @@
 
     <!-- ORDERS -->
     <div class="view" id="v-orders">
-      <div class="toolbar">
-        <h2 class="page" style="margin:0">Orders</h2>
+      <div class="welcome">
+        <div>
+          <h2>Orders</h2>
+          <p>Track, fulfill and refund every purchase across your stores.</p>
+        </div>
+        <img src="/static/illustrations/working-late.svg" alt="" />
+      </div>
+      <div class="toolbar" style="justify-content:flex-end">
         <div style="display:flex;gap:10px">
           <input id="orderSearch" placeholder="Search email / order id…" style="width:220px;margin:0" oninput="orderPage=1;renderOrders()" />
           <select id="storeFilter" style="width:auto;margin:0" onchange="orderPage=1;renderOrders()">
@@ -407,9 +418,9 @@ function gotoOrderPage(n){ orderPage = n; localStorage.setItem("dispatch_orderPa
 function gotoProdPage(n){ prodPage = n; localStorage.setItem("dispatch_prodPage", n); renderProducts(); }
 function loadingRow(id, colspan, text){ document.getElementById(id).innerHTML = `<tr><td colspan="${colspan}" class="loadcell"><span class="rowspin"></span>${text||"Loading…"}</td></tr>`; }
 function emptyState(colspan, title, sub, img){
+  const illu = img ? `<img class="illu-img" src="/static/illustrations/${img}" alt="" />` : "";
   return `<tr><td colspan="${colspan}" style="border-bottom:none;padding:30px 20px">
-    <div class="empty">
-      <img class="illu-img" src="/static/illustrations/${img||'admin.svg'}" alt="" />
+    <div class="empty">${illu}
       <div class="etitle">${esc(title)}</div>
       <div class="esub">${esc(sub||"")}</div>
     </div>
@@ -583,7 +594,7 @@ function renderProducts(){
         <button class="btn sm danger" onclick="delProduct(${p.id}, this)">Del</button>
       </td>
     </tr>`;
-  }).join("") || emptyState(7, q?"No matching rules":"No delivery rules yet", q?"Try a different search.":"Add a rule to map a Shopify SKU to its digital goods.", "admin.svg");
+  }).join("") || emptyState(7, q?"No matching rules":"No delivery rules yet", q?"Try a different search.":"Add a rule to map a Shopify SKU to its digital goods.");
   syncSelectAll("prodAll", prodPageIds, selProds); updateProdBulk();
 }
 
@@ -693,7 +704,7 @@ function renderOrders(){
       <td><span class="pill ${o.status}">${o.status}</span></td>
       <td style="text-align:right;white-space:nowrap">${actions}</td>
     </tr>`;
-  }).join("") || emptyState(10, "No orders yet", (q||store)?"Try clearing your filters.":"Orders will appear here once buyers check out.", "working-late.svg");
+  }).join("") || emptyState(10, "No orders yet", (q||store)?"Try clearing your filters.":"Orders will appear here once buyers check out.");
   syncSelectAll("orderAll", orderPageIds, selOrders); updateOrderBulk();
 }
 async function fulfill(pid, btn){
