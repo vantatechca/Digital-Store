@@ -36,6 +36,8 @@
   .err{color:var(--bad);font-size:13px;margin-top:8px}
   @keyframes spin{to{transform:rotate(360deg)}}
   .btn-spinner{display:inline-block;width:13px;height:13px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;vertical-align:-2px;margin-right:6px}
+  .rowspin{display:inline-block;width:16px;height:16px;border:2px solid var(--line);border-top-color:var(--muted);border-radius:50%;animation:spin .7s linear infinite;vertical-align:-3px;margin-right:8px}
+  .loadcell{text-align:center;padding:38px;color:var(--muted);font-size:14px}
   /* toasts */
   .toasts{position:fixed;top:18px;right:18px;z-index:100000;display:flex;flex-direction:column;gap:10px}
   .toast{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-left:4px solid var(--good);border-radius:10px;padding:12px 16px;box-shadow:0 10px 30px rgba(15,23,42,.14);font-size:14px;min-width:240px;max-width:380px;animation:toastIn .2s ease}
@@ -322,6 +324,8 @@ function renderPager(elId, page, total, onGo){
 }
 function gotoOrderPage(n){ orderPage = n; localStorage.setItem("dispatch_orderPage", n); renderOrders(); }
 function gotoProdPage(n){ prodPage = n; localStorage.setItem("dispatch_prodPage", n); renderProducts(); }
+function loadingRow(id, colspan, text){ document.getElementById(id).innerHTML = `<tr><td colspan="${colspan}" class="loadcell"><span class="rowspin"></span>${text||"Loading…"}</td></tr>`; }
+function errorRow(id, colspan, msg){ document.getElementById(id).innerHTML = `<tr><td colspan="${colspan}" class="loadcell" style="color:var(--bad)">${esc(msg||"Failed to load")}</td></tr>`; }
 
 // ---- bulk selection ----
 let selOrders = new Set(), selProds = new Set();
@@ -425,7 +429,10 @@ function nav(v){
 
 /* ---- stats ---- */
 async function loadStats(){
-  const s = await api("/api/admin/stats");
+  document.getElementById("kpis").innerHTML = '<div class="loadcell" style="grid-column:1/-1"><span class="rowspin"></span>Loading…</div>';
+  let s;
+  try{ s = await api("/api/admin/stats"); }
+  catch(e){ document.getElementById("kpis").innerHTML = `<div class="loadcell" style="grid-column:1/-1;color:var(--bad)">${esc(e.message)}</div>`; return; }
   document.getElementById("kpis").innerHTML = [
     ["Revenue", money(s.revenue_cents), "amber"],
     ["Orders", s.orders_total, ""],
@@ -453,9 +460,12 @@ async function loadStats(){
 /* ---- products ---- */
 let productCache = [];
 async function loadProducts(){
-  productCache = await api("/api/admin/products");
-  selProds.clear();
-  renderProducts();
+  loadingRow("prodRows", 7, "Loading rules…");
+  try{
+    productCache = await api("/api/admin/products");
+    selProds.clear();
+    renderProducts();
+  }catch(e){ errorRow("prodRows", 7, e.message); }
 }
 function renderProducts(){
   const q=(document.getElementById("prodSearch")?.value||"").trim().toLowerCase();
@@ -551,7 +561,10 @@ async function saveKeys(btn){
 let orderCache = [];
 async function loadOrders(){
   const f=document.getElementById("orderFilter").value;
-  orderCache = await api("/api/admin/orders"+(f?`?status=${f}`:""));
+  loadingRow("orderRows", 10, "Loading orders…");
+  try{
+    orderCache = await api("/api/admin/orders"+(f?`?status=${f}`:""));
+  }catch(e){ errorRow("orderRows", 10, e.message); return; }
   // populate the store filter from the stores present in the results
   const sel=document.getElementById("storeFilter"); const cur=sel.value;
   const stores=[...new Set(orderCache.map(o=>o.store).filter(Boolean))].sort();
