@@ -32,7 +32,10 @@
   .btn.sm{padding:6px 11px;font-size:12px;border-radius:7px}
   .btn.danger{background:none;border:1px solid var(--bad);color:var(--bad)}
   .btn.danger:hover{background:rgba(220,38,38,.06)}
+  .btn:disabled{opacity:.6;cursor:not-allowed}
   .err{color:var(--bad);font-size:13px;margin-top:8px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .btn-spinner{display:inline-block;width:13px;height:13px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;vertical-align:-2px;margin-right:6px}
 
   /* shell */
   .app{display:none;min-height:100vh}
@@ -103,7 +106,7 @@
     <input type="email" id="lEmail" placeholder="you@example.com" autocomplete="username" />
     <label>Password</label>
     <input type="password" id="lPass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()" />
-    <button class="btn" style="width:100%" onclick="doLogin()">Sign in</button>
+    <button class="btn" style="width:100%" onclick="doLogin(this)">Sign in</button>
     <div class="err" id="lErr"></div>
   </div>
 </div>
@@ -142,9 +145,12 @@
     <div class="view" id="v-products">
       <div class="toolbar">
         <h2 class="page" style="margin:0">Delivery rules</h2>
-        <button class="btn" onclick="openProduct()">+ New rule</button>
+        <div style="display:flex;gap:10px;align-items:center">
+          <input id="prodSearch" placeholder="Search name / SKU…" style="width:220px;margin:0" oninput="renderProducts()" />
+          <button class="btn" onclick="openProduct()">+ New rule</button>
+        </div>
       </div>
-      <p class="hint" style="margin:-8px 0 16px">Each rule maps a Shopify SKU to how this app fulfills it. Pricing lives in Shopify.</p>
+      <p class="hint" style="margin:-8px 0 16px">Each rule maps a Shopify SKU to how this app fulfills it.</p>
       <div class="panel" style="padding:0;overflow:hidden">
         <table>
           <thead><tr><th>Product</th><th>SKU</th><th>Type</th><th>Stock</th><th>Status</th><th></th></tr></thead>
@@ -203,7 +209,7 @@
     <div style="margin-bottom:14px"><label><input type="checkbox" id="pActive" checked style="width:auto;margin-right:6px" />Active</label></div>
     <div class="modal-actions">
       <button class="btn ghost" onclick="closeModal('prodModal')">Cancel</button>
-      <button class="btn" onclick="saveProduct()">Save</button>
+      <button class="btn" onclick="saveProduct(this)">Save</button>
     </div>
   </div>
 </div>
@@ -230,7 +236,7 @@
     <textarea id="keysText" class="mono" placeholder="ABCD-1234-EFGH&#10;WXYZ-5678-IJKL" style="min-height:160px"></textarea>
     <div class="modal-actions">
       <button class="btn ghost" onclick="closeModal('keysModal')">Cancel</button>
-      <button class="btn" onclick="saveKeys()">Add keys</button>
+      <button class="btn" onclick="saveKeys(this)">Add keys</button>
     </div>
   </div>
 </div>
@@ -260,14 +266,24 @@ async function api(path, opts={}){
   return r.status===204?null:r.json();
 }
 
-async function doLogin(){
+// Disable a button + show a spinner while an async action runs.
+async function busy(btn, label, fn){
+  if(btn){ if(btn.dataset._idle===undefined) btn.dataset._idle=btn.innerHTML; btn.disabled=true; btn.innerHTML=`<span class="btn-spinner"></span>${label||""}`; }
+  try{ return await fn(); }
+  finally{ if(btn){ btn.disabled=false; if(btn.dataset._idle!==undefined){ btn.innerHTML=btn.dataset._idle; delete btn.dataset._idle; } } }
+}
+
+async function doLogin(btn){
+  document.getElementById("lErr").textContent = "";
   const email=document.getElementById("lEmail").value, pass=document.getElementById("lPass").value;
   const body = new URLSearchParams({username:email,password:pass});
   try{
-    const r = await fetch(`${API}/api/admin/login`,{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body});
-    if(!r.ok) throw new Error("Invalid credentials");
-    const data = await r.json();
-    token = data.access_token; localStorage.setItem("dispatch_token",token);
+    await busy(btn, "Signing in…", async ()=>{
+      const r = await fetch(`${API}/api/admin/login`,{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body});
+      if(!r.ok) throw new Error("Invalid credentials");
+      const data = await r.json();
+      token = data.access_token; localStorage.setItem("dispatch_token",token);
+    });
     enterApp();
   }catch(e){ document.getElementById("lErr").textContent = e.message; }
 }
@@ -318,7 +334,12 @@ async function loadStats(){
 let productCache = [];
 async function loadProducts(){
   productCache = await api("/api/admin/products");
-  document.getElementById("prodRows").innerHTML = productCache.map(p=>{
+  renderProducts();
+}
+function renderProducts(){
+  const q=(document.getElementById("prodSearch")?.value||"").trim().toLowerCase();
+  const rows = productCache.filter(p=> !q || (p.name||"").toLowerCase().includes(q) || (p.sku||"").toLowerCase().includes(q));
+  document.getElementById("prodRows").innerHTML = rows.map(p=>{
     const stock = p.delivery_type==="license_key"
       ? `<span class="stockmini ${p.keys_available===0?'out':''}">${p.keys_available} keys</span>`
       : `<span class="stockmini">—</span>`;
@@ -333,10 +354,10 @@ async function loadProducts(){
       <td style="text-align:right;white-space:nowrap">
         ${keysBtn}
         <button class="btn sm ghost" onclick="openProduct(${p.id})">Edit</button>
-        <button class="btn sm danger" onclick="delProduct(${p.id})">Del</button>
+        <button class="btn sm danger" onclick="delProduct(${p.id}, this)">Del</button>
       </td>
     </tr>`;
-  }).join("") || `<tr><td colspan="6" style="color:var(--muted)">No products yet.</td></tr>`;
+  }).join("") || `<tr><td colspan="6" style="color:var(--muted)">No rules${q?" match your search":" yet"}.</td></tr>`;
 }
 
 function openProduct(id){
@@ -360,7 +381,7 @@ function toggleTypeFields(){
   document.getElementById("fDownload").style.display = t==="file_download"?"block":"none";
   document.getElementById("fAccess").style.display = t==="access_grant"?"block":"none";
 }
-async function saveProduct(){
+async function saveProduct(btn){
   const body={
     sku:pSku.value.trim(), name:pName.value, description:pDesc.value,
     price_cents: Math.round((parseFloat(pPrice.value)||0)*100),
@@ -369,13 +390,15 @@ async function saveProduct(){
   };
   if(!body.sku){ alert("SKU is required — it must match the Shopify variant SKU."); return; }
   try{
-    if(pId.value) await api(`/api/admin/products/${pId.value}`,{method:"PATCH",body:JSON.stringify(body)});
-    else await api("/api/admin/products",{method:"POST",body:JSON.stringify(body)});
+    await busy(btn, "Saving…", async ()=>{
+      if(pId.value) await api(`/api/admin/products/${pId.value}`,{method:"PATCH",body:JSON.stringify(body)});
+      else await api("/api/admin/products",{method:"POST",body:JSON.stringify(body)});
+    });
     closeModal("prodModal"); loadProducts(); loadStats();
   }catch(e){ alert(e.message); }
 }
-async function delProduct(id){ if(!confirm("Delete this rule?"))return;
-  try{ await api(`/api/admin/products/${id}`,{method:"DELETE"}); loadProducts(); loadStats(); }
+async function delProduct(id, btn){ if(!confirm("Delete this rule?"))return;
+  try{ await busy(btn, "", ()=>api(`/api/admin/products/${id}`,{method:"DELETE"})); loadProducts(); loadStats(); }
   catch(e){ alert("Couldn't delete: "+e.message); } }
 
 function openKeys(id){
@@ -385,12 +408,14 @@ function openKeys(id){
   document.getElementById("keysText").value="";
   document.getElementById("keysModal").classList.add("on");
 }
-async function saveKeys(){
+async function saveKeys(btn){
   const id=document.getElementById("keysProdId").value;
   const keys=document.getElementById("keysText").value.split("\n").map(s=>s.trim()).filter(Boolean);
   if(!keys.length){ alert("Paste at least one key."); return; }
-  await api(`/api/admin/products/${id}/keys`,{method:"POST",body:JSON.stringify({keys})});
-  closeModal("keysModal"); loadProducts();
+  try{
+    await busy(btn, "Adding…", ()=>api(`/api/admin/products/${id}/keys`,{method:"POST",body:JSON.stringify({keys})}));
+    closeModal("keysModal"); loadProducts();
+  }catch(e){ alert(e.message); }
 }
 
 /* ---- orders ---- */
@@ -416,9 +441,9 @@ function renderOrders(){
   document.getElementById("orderRows").innerHTML = rows.map(o=>{
     const items=o.items.map(i=>`${i.quantity}× ${esc(i.product_name)}`).join(", ");
     let actions=`<button class="btn sm ghost" onclick="openOrder('${o.public_id}')">View</button>`;
-    if(o.status==="pending") actions+=` <button class="btn sm" onclick="fulfill('${o.public_id}')">Mark paid</button>`;
-    else if(o.status==="paid") actions+=` <button class="btn sm" onclick="fulfill('${o.public_id}')">Deliver</button>`;
-    if(o.status==="paid"||o.status==="delivered") actions+=` <button class="btn sm danger" onclick="refund('${o.public_id}')">Refund</button>`;
+    if(o.status==="pending") actions+=` <button class="btn sm" onclick="fulfill('${o.public_id}', this)">Mark paid</button>`;
+    else if(o.status==="paid") actions+=` <button class="btn sm" onclick="fulfill('${o.public_id}', this)">Deliver</button>`;
+    if(o.status==="paid"||o.status==="delivered") actions+=` <button class="btn sm danger" onclick="refund('${o.public_id}', this)">Refund</button>`;
     return `<tr>
       <td class="mono" style="font-size:12px">${o.public_id.slice(0,8)}</td>
       <td style="font-size:12px;color:var(--muted);white-space:nowrap">${fmtDate(o.created_at)}</td>
@@ -432,9 +457,14 @@ function renderOrders(){
     </tr>`;
   }).join("") || `<tr><td colspan="9" style="color:var(--muted)">No orders.</td></tr>`;
 }
-async function fulfill(pid){ await api(`/api/admin/orders/${pid}/fulfill`,{method:"POST"}); loadOrders(); loadStats(); }
-async function refund(pid){ if(!confirm("Refund this order?"))return;
-  await api(`/api/admin/orders/${pid}/refund`,{method:"POST"}); loadOrders(); loadStats(); }
+async function fulfill(pid, btn){
+  try{ await busy(btn, "…", ()=>api(`/api/admin/orders/${pid}/fulfill`,{method:"POST"})); loadOrders(); loadStats(); }
+  catch(e){ alert(e.message); }
+}
+async function refund(pid, btn){ if(!confirm("Refund this order?"))return;
+  try{ await busy(btn, "…", ()=>api(`/api/admin/orders/${pid}/refund`,{method:"POST"})); loadOrders(); loadStats(); }
+  catch(e){ alert(e.message); }
+}
 
 /* ---- order detail + resend ---- */
 let currentOrderPid = "";
@@ -459,7 +489,7 @@ async function openOrder(pid){
 }
 async function resendOrder(){
   if(!currentOrderPid) return;
-  try{ await api(`/api/admin/orders/${currentOrderPid}/resend`,{method:"POST"}); alert("Confirmation email re-sent."); }
+  try{ await busy(document.getElementById("odResendBtn"), "Sending…", ()=>api(`/api/admin/orders/${currentOrderPid}/resend`,{method:"POST"})); alert("Confirmation email re-sent."); }
   catch(e){ alert(e.message); }
 }
 
