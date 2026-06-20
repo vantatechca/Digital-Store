@@ -92,7 +92,7 @@
   .whop-loader-spinner { width:24px; height:24px; border:3px solid #e5e7eb; border-top-color:var(--accent); border-radius:50%; animation:spin .8s linear infinite; }
   @keyframes spin { to { transform:rotate(360deg); } }
   @keyframes floaty { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-9px); } }
-  .checkout-illu { width:240px; max-width:70%; height:auto; display:block; margin:0 auto 22px; animation:floaty 5s ease-in-out infinite; }
+  .checkout-illu { width:160px; max-width:50%; height:auto; display:block; margin:18px auto 22px; animation:floaty 5s ease-in-out infinite; }
   @media (max-width:920px){ .checkout-illu { display:none; } }
   .btn-spinner { display:inline-block; width:16px; height:16px; border:2px solid rgba(255,255,255,.4); border-top-color:#fff; border-radius:50%; animation:spin .7s linear infinite; vertical-align:-3px; margin-right:8px; }
 </style>
@@ -106,10 +106,10 @@
 
 <div class="checkout-container" id="main-layout">
   <div class="checkout-forms-pane">
-    <img class="checkout-illu" src="/static/illustrations/self-checkout.svg" alt="" />
     <div class="form-section">
       <h2>Where should we send your order?</h2>
       <p class="lead">Your digital goods and receipt are delivered to this email instantly after payment.</p>
+      <img class="checkout-illu" src="/static/illustrations/self-checkout.svg" alt="" />
       <div class="field-group">
         <label for="email">Email address</label>
         <input type="email" id="email" placeholder="you@example.com" autocomplete="email" required />
