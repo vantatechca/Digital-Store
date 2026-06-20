@@ -133,6 +133,12 @@
   @keyframes pulse{0%,100%{box-shadow:0 0 0 4px rgba(99,102,241,.18)}50%{box-shadow:0 0 0 8px rgba(99,102,241,.06)}}
   /* illustrations */
   .illu-img{width:230px;max-width:62%;height:auto;animation:float 4.5s ease-in-out infinite}
+  /* overview welcome banner */
+  .welcome{display:flex;align-items:center;justify-content:space-between;gap:20px;background:linear-gradient(135deg,#eef2ff,#e0e7ff);border:1px solid var(--line);border-radius:18px;padding:22px 28px;margin-bottom:24px;overflow:hidden}
+  .welcome h2{margin:0 0 5px;font-size:23px;font-weight:700;letter-spacing:-.02em}
+  .welcome p{margin:0;color:var(--muted);font-size:14px}
+  .welcome img{width:170px;max-width:36%;height:auto;flex:0 0 auto;animation:float 5s ease-in-out infinite}
+  @media(max-width:600px){.welcome img{display:none}}
   /* split login */
   .login .box.split{width:820px;max-width:100%;padding:0;display:grid;grid-template-columns:1fr 1fr;overflow:hidden}
   .login-art{background:linear-gradient(155deg,#eef2ff,#e0e7ff);padding:44px 40px;display:flex;flex-direction:column;justify-content:center}
@@ -211,7 +217,13 @@
   <main>
     <!-- OVERVIEW -->
     <div class="view on" id="v-overview">
-      <h2 class="page">Overview</h2>
+      <div class="welcome">
+        <div>
+          <h2>Welcome back</h2>
+          <p>Here's how your stores are performing.</p>
+        </div>
+        <img src="/static/illustrations/hello.svg" alt="" />
+      </div>
       <div class="kpis" id="kpis"></div>
       <div class="panel">
         <h3>Revenue — last 14 days</h3>
