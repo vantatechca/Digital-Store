@@ -125,6 +125,15 @@
   .modal h3{margin:0 0 20px;font-size:18px;font-weight:700}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:14px}
+  /* confirm dialog */
+  .confirm-m{width:420px;text-align:center}
+  .confirm-ic{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+  .confirm-ic svg{width:26px;height:26px}
+  .confirm-ic.warn{background:rgba(225,29,72,.10)} .confirm-ic.warn svg{color:var(--bad)}
+  .confirm-ic.info{background:rgba(99,102,241,.10)} .confirm-ic.info svg{color:var(--brand)}
+  .confirm-m h3{margin:0 0 8px}
+  .confirm-m p{margin:0 0 22px;color:var(--muted);font-size:14px;line-height:1.55}
+  .confirm-m .modal-actions{justify-content:center}
   textarea{min-height:84px;resize:vertical}
   .hint{font-size:11px;color:var(--muted);margin:-9px 0 13px}
 
@@ -391,7 +400,7 @@ async function api(path, opts={}){
     ...opts,
     headers:{ "Content-Type":"application/json", ...(token?{Authorization:`Bearer ${token}`}:{}) , ...(opts.headers||{}) }
   });
-  if(r.status===401){ logout(); throw new Error("Session expired"); }
+  if(r.status===401){ doLogout(); throw new Error("Session expired"); }
   if(!r.ok){ const e=await r.json().catch(()=>({})); throw new Error(e.detail||"Request failed"); }
   return r.status===204?null:r.json();
 }
@@ -455,7 +464,7 @@ function updateProdBulk(){
 }
 async function bulkOrders(action, label, btn){
   const ids=[...selOrders]; if(!ids.length) return;
-  if(action==="refund" && !confirm(`Refund ${ids.length} order(s)?`)) return;
+  if(action==="refund" && !(await confirmAction({title:`Refund ${ids.length} order(s)?`, message:"Each order will be refunded through Whop and marked as refunded. This can't be undone.", confirmLabel:`Refund ${ids.length}`, danger:true}))) return;
   let ok=0, fail=0;
   await busy(btn, label+"…", async ()=>{
     for(const id of ids){ try{ await api(`/api/admin/orders/${id}/${action}`,{method:"POST"}); ok++; }catch(e){ fail++; } }
@@ -465,7 +474,7 @@ async function bulkOrders(action, label, btn){
 }
 async function bulkProducts(action, btn){
   const ids=[...selProds]; if(!ids.length) return;
-  if(action==="delete" && !confirm(`Delete ${ids.length} rule(s)? This can't be undone.`)) return;
+  if(action==="delete" && !(await confirmAction({title:`Delete ${ids.length} rule(s)?`, message:"This removes the selected delivery rules. Past orders keep their records, but new checkouts for these SKUs won't be fulfilled. This can't be undone.", confirmLabel:`Delete ${ids.length}`, danger:true}))) return;
   let ok=0, fail=0;
   await busy(btn, "Working…", async ()=>{
     for(const id of ids){
@@ -478,6 +487,33 @@ async function bulkProducts(action, btn){
   });
   selProds.clear(); loadProducts(); loadStats();
   toast(`${ok} rule(s) ${action==="delete"?"deleted":(action+"d")}${fail?`, ${fail} failed`:""}`, fail?"error":"success");
+}
+
+// Styled confirmation dialog. Returns a Promise<boolean>.
+function confirmAction({title, message, confirmLabel="Confirm", danger=false, icon="warn"}={}){
+  return new Promise(resolve=>{
+    const ov=document.createElement("div"); ov.className="modal on"; ov.style.zIndex="100001";
+    const warnSvg='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>';
+    const outSvg='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></svg>';
+    const ic = icon==="signout" ? outSvg : warnSvg;
+    ov.innerHTML=`<div class="m confirm-m">
+      <div class="confirm-ic ${danger?"warn":"info"}">${ic}</div>
+      <h3>${esc(title||"Are you sure?")}</h3>
+      <p>${esc(message||"")}</p>
+      <div class="modal-actions">
+        <button class="btn ghost" data-act="cancel">Cancel</button>
+        <button class="btn ${danger?"danger":""}" data-act="ok">${esc(confirmLabel)}</button>
+      </div>
+    </div>`;
+    document.body.appendChild(ov);
+    const done=(val)=>{ ov.remove(); document.removeEventListener("keydown",onKey); resolve(val); };
+    const onKey=(e)=>{ if(e.key==="Escape"){ e.preventDefault(); done(false); } else if(e.key==="Enter"){ e.preventDefault(); done(true); } };
+    document.addEventListener("keydown",onKey);
+    ov.addEventListener("click",e=>{ if(e.target===ov) done(false); });
+    ov.querySelector('[data-act="cancel"]').onclick=()=>done(false);
+    ov.querySelector('[data-act="ok"]').onclick=()=>done(true);
+    ov.querySelector('[data-act="ok"]').focus();
+  });
 }
 
 // Transient success/error notification.
@@ -515,8 +551,12 @@ async function doLogin(btn){
   }catch(e){ document.getElementById("lErr").textContent = e.message; }
 }
 
-function logout(){ token=""; localStorage.removeItem("dispatch_token");
+function doLogout(){ token=""; localStorage.removeItem("dispatch_token");
   document.getElementById("app").classList.remove("on"); document.getElementById("login").style.display="flex"; }
+async function logout(){
+  if(!(await confirmAction({title:"Sign out?", message:"You'll be returned to the login screen and need to sign back in to manage orders and rules.", confirmLabel:"Sign out", danger:true, icon:"signout"}))) return;
+  doLogout();
+}
 
 function enterApp(){
   document.getElementById("login").style.display="none";
@@ -642,7 +682,7 @@ async function saveProduct(btn){
     toast(editing ? "Rule updated" : "Rule created");
   }catch(e){ toast(e.message, "error"); }
 }
-async function delProduct(id, btn){ if(!confirm("Delete this rule?"))return;
+async function delProduct(id, btn){ if(!(await confirmAction({title:"Delete this rule?", message:"This removes the delivery rule. Past orders keep their records, but new checkouts for this SKU won't be fulfilled. This can't be undone.", confirmLabel:"Delete rule", danger:true})))return;
   try{ await busy(btn, "", ()=>api(`/api/admin/products/${id}`,{method:"DELETE"})); loadProducts(); loadStats(); toast("Rule deleted"); }
   catch(e){ toast("Couldn't delete: "+e.message, "error"); } }
 
@@ -716,7 +756,7 @@ async function fulfill(pid, btn){
   try{ await busy(btn, "…", ()=>api(`/api/admin/orders/${pid}/fulfill`,{method:"POST"})); loadOrders(); loadStats(); toast("Order marked paid & delivered"); }
   catch(e){ toast(e.message, "error"); }
 }
-async function refund(pid, btn){ if(!confirm("Refund this order?"))return;
+async function refund(pid, btn){ if(!(await confirmAction({title:"Refund this order?", message:"This issues a real refund through Whop and marks the order as refunded. The buyer keeps anything already delivered.", confirmLabel:"Refund order", danger:true})))return;
   try{ await busy(btn, "…", ()=>api(`/api/admin/orders/${pid}/refund`,{method:"POST"})); loadOrders(); loadStats(); toast("Order refunded"); }
   catch(e){ toast(e.message, "error"); }
 }
