@@ -125,6 +125,25 @@
   .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:14px}
   textarea{min-height:84px;resize:vertical}
   .hint{font-size:11px;color:var(--muted);margin:-9px 0 13px}
+
+  /* svg KPI icons */
+  .kpi .kicon svg{width:21px;height:21px;color:var(--brand)}
+  /* pulsing brand mark */
+  .login .dot,.nav .dot{animation:pulse 2.6s ease-in-out infinite}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 4px rgba(99,102,241,.18)}50%{box-shadow:0 0 0 8px rgba(99,102,241,.06)}}
+  /* animated empty-state illustration */
+  .empty{display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--muted);padding:14px}
+  .empty .illu{position:relative;width:120px;height:100px;margin-bottom:6px}
+  .empty .illu .box{position:absolute;inset:0 0 8px 0;margin:auto;animation:float 3.4s ease-in-out infinite}
+  .empty .illu .ring{position:absolute;left:50%;bottom:2px;width:74px;height:14px;transform:translateX(-50%);background:radial-gradient(closest-side,rgba(99,102,241,.18),transparent);border-radius:50%;animation:shadow 3.4s ease-in-out infinite}
+  .empty .illu .spark{position:absolute;animation:twinkle 2.2s ease-in-out infinite}
+  .empty .illu .spark.b{animation-delay:.7s}
+  .empty .illu .spark.c{animation-delay:1.3s}
+  .empty .etitle{font-weight:600;color:var(--text);font-size:15px;margin-top:4px}
+  .empty .esub{font-size:13px}
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+  @keyframes shadow{0%,100%{opacity:.5;transform:translateX(-50%) scale(1)}50%{opacity:.85;transform:translateX(-50%) scale(.82)}}
+  @keyframes twinkle{0%,100%{opacity:.25;transform:scale(.8)}50%{opacity:1;transform:scale(1.15)}}
 </style>
 </head>
 <body>
@@ -353,6 +372,24 @@ function renderPager(elId, page, total, onGo){
 function gotoOrderPage(n){ orderPage = n; localStorage.setItem("dispatch_orderPage", n); renderOrders(); }
 function gotoProdPage(n){ prodPage = n; localStorage.setItem("dispatch_prodPage", n); renderProducts(); }
 function loadingRow(id, colspan, text){ document.getElementById(id).innerHTML = `<tr><td colspan="${colspan}" class="loadcell"><span class="rowspin"></span>${text||"Loading…"}</td></tr>`; }
+function emptyState(colspan, title, sub){
+  return `<tr><td colspan="${colspan}" style="border-bottom:none;padding:40px 20px">
+    <div class="empty">
+      <div class="illu">
+        <div class="ring"></div>
+        <svg class="box" width="96" height="96" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" fill="#eef2ff"/>
+          <path d="M3.3 7 12 12l8.7-5M12 12v9.4"/>
+        </svg>
+        <svg class="spark" style="left:10px;top:8px" width="15" height="15" viewBox="0 0 24 24" fill="var(--brand-2)"><path d="M12 2l1.9 6.5L20 10l-6.1 1.5L12 18l-1.9-6.5L4 10l6.1-1.5z"/></svg>
+        <svg class="spark b" style="right:10px;top:26px" width="11" height="11" viewBox="0 0 24 24" fill="var(--brand)"><path d="M12 2l1.9 6.5L20 10l-6.1 1.5L12 18l-1.9-6.5L4 10l6.1-1.5z"/></svg>
+        <svg class="spark c" style="right:26px;bottom:30px" width="8" height="8" viewBox="0 0 24 24" fill="var(--brand-2)"><circle cx="12" cy="12" r="10"/></svg>
+      </div>
+      <div class="etitle">${esc(title)}</div>
+      <div class="esub">${esc(sub||"")}</div>
+    </div>
+  </td></tr>`;
+}
 function errorRow(id, colspan, msg){ document.getElementById(id).innerHTML = `<tr><td colspan="${colspan}" class="loadcell" style="color:var(--bad)">${esc(msg||"Failed to load")}</td></tr>`; }
 
 // ---- bulk selection ----
@@ -461,13 +498,14 @@ async function loadStats(){
   let s;
   try{ s = await api("/api/admin/stats"); }
   catch(e){ document.getElementById("kpis").innerHTML = `<div class="loadcell" style="grid-column:1/-1;color:var(--bad)">${esc(e.message)}</div>`; return; }
+  const _ic = (p)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
   document.getElementById("kpis").innerHTML = [
-    ["Revenue", money(s.revenue_cents), "amber", "💰"],
-    ["Orders", s.orders_total, "", "🧾"],
-    ["Paid", s.orders_paid, "", "✅"],
-    ["Pending", s.orders_pending, "", "⏳"],
-    ["Customers", s.customers, "", "👤"],
-    ["Active rules", s.products_active, "", "📦"],
+    ["Revenue", money(s.revenue_cents), "amber", _ic('<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01M18 12h.01"/>')],
+    ["Orders", s.orders_total, "", _ic('<path d="M6 2h12v20l-3-2-3 2-3-2-3 2V2z"/><path d="M9 8h6M9 12h6"/>')],
+    ["Paid", s.orders_paid, "", _ic('<circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.5 2.5 4.5-5"/>')],
+    ["Pending", s.orders_pending, "", _ic('<circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/>')],
+    ["Customers", s.customers, "", _ic('<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>')],
+    ["Active rules", s.products_active, "", _ic('<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 7 12 12l8.73-5"/>')],
   ].map(([l,v,c,ic])=>`<div class="kpi"><div class="kicon">${ic}</div><div><div class="l">${l}</div><div class="v ${c}">${v}</div></div></div>`).join("");
 
   const max = Math.max(1,...s.revenue_by_day.map(d=>d.cents));
@@ -520,7 +558,7 @@ function renderProducts(){
         <button class="btn sm danger" onclick="delProduct(${p.id}, this)">Del</button>
       </td>
     </tr>`;
-  }).join("") || `<tr><td colspan="7" style="color:var(--muted)">No rules${q?" match your search":" yet"}.</td></tr>`;
+  }).join("") || emptyState(7, q?"No matching rules":"No delivery rules yet", q?"Try a different search.":"Add a rule to map a Shopify SKU to its digital goods.");
   syncSelectAll("prodAll", prodPageIds, selProds); updateProdBulk();
 }
 
@@ -630,7 +668,7 @@ function renderOrders(){
       <td><span class="pill ${o.status}">${o.status}</span></td>
       <td style="text-align:right;white-space:nowrap">${actions}</td>
     </tr>`;
-  }).join("") || `<tr><td colspan="10" style="color:var(--muted)">No orders.</td></tr>`;
+  }).join("") || emptyState(10, "No orders yet", (q||store)?"Try clearing your filters.":"Orders will appear here once buyers check out.");
   syncSelectAll("orderAll", orderPageIds, selOrders); updateOrderBulk();
 }
 async function fulfill(pid, btn){
