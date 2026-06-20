@@ -46,6 +46,12 @@
   .pager:empty{display:none}
   .pager .pgbtns{display:flex;align-items:center;gap:10px}
   .pager .pgnum{font-size:12px}
+  /* bulk actions */
+  .bulkbar{display:none;align-items:center;gap:10px;background:var(--bg-card);border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin-bottom:12px}
+  .bulkbar .cnt{font-weight:600;font-size:14px}
+  .bulkbar .spacer{flex:1}
+  input.rowchk{width:auto;margin:0;cursor:pointer;vertical-align:middle}
+  th.chkcol,td.chkcol{width:34px;text-align:center;padding-left:14px}
 
   /* shell */
   .app{display:none;min-height:100vh}
@@ -161,9 +167,17 @@
         </div>
       </div>
       <p class="hint" style="margin:-8px 0 16px">Each rule maps a Shopify SKU to how this app fulfills it.</p>
+      <div class="bulkbar" id="prodBulk">
+        <span class="cnt" id="prodBulkCount">0 selected</span>
+        <span class="spacer"></span>
+        <button class="btn sm ghost" onclick="bulkProducts('activate', this)">Activate</button>
+        <button class="btn sm ghost" onclick="bulkProducts('deactivate', this)">Deactivate</button>
+        <button class="btn sm danger" onclick="bulkProducts('delete', this)">Delete</button>
+        <button class="btn sm ghost" onclick="clearProdSel()">Clear</button>
+      </div>
       <div class="panel" style="padding:0;overflow:hidden">
         <table>
-          <thead><tr><th>Product</th><th>SKU</th><th>Type</th><th>Stock</th><th>Status</th><th></th></tr></thead>
+          <thead><tr><th class="chkcol"><input type="checkbox" class="rowchk" id="prodAll" onchange="toggleAllProds(this.checked)"></th><th>Product</th><th>SKU</th><th>Type</th><th>Stock</th><th>Status</th><th></th></tr></thead>
           <tbody id="prodRows"></tbody>
         </table>
       </div>
@@ -188,9 +202,17 @@
           </select>
         </div>
       </div>
+      <div class="bulkbar" id="orderBulk">
+        <span class="cnt" id="orderBulkCount">0 selected</span>
+        <span class="spacer"></span>
+        <button class="btn sm" onclick="bulkOrders('fulfill','Mark paid', this)">Mark paid</button>
+        <button class="btn sm ghost" onclick="bulkOrders('resend','Resend', this)">Resend email</button>
+        <button class="btn sm danger" onclick="bulkOrders('refund','Refund', this)">Refund</button>
+        <button class="btn sm ghost" onclick="clearOrderSel()">Clear</button>
+      </div>
       <div class="panel" style="padding:0;overflow:hidden">
         <table>
-          <thead><tr><th>Order</th><th>Date</th><th>Customer</th><th>Store</th><th>Items</th><th>Total</th><th>Method</th><th>Status</th><th></th></tr></thead>
+          <thead><tr><th class="chkcol"><input type="checkbox" class="rowchk" id="orderAll" onchange="toggleAllOrders(this.checked)"></th><th>Order</th><th>Date</th><th>Customer</th><th>Store</th><th>Items</th><th>Total</th><th>Method</th><th>Status</th><th></th></tr></thead>
           <tbody id="orderRows"></tbody>
         </table>
       </div>
@@ -300,6 +322,56 @@ function renderPager(elId, page, total, onGo){
 function gotoOrderPage(n){ orderPage = n; renderOrders(); }
 function gotoProdPage(n){ prodPage = n; renderProducts(); }
 
+// ---- bulk selection ----
+let selOrders = new Set(), selProds = new Set();
+let orderPageIds = [], prodPageIds = [];
+function syncSelectAll(chkId, pageIds, sel){
+  const c = document.getElementById(chkId);
+  if(c) c.checked = pageIds.length>0 && pageIds.every(id=>sel.has(id));
+}
+function toggleOrderSel(id, on){ on?selOrders.add(id):selOrders.delete(id); syncSelectAll("orderAll", orderPageIds, selOrders); updateOrderBulk(); }
+function toggleProdSel(id, on){ on?selProds.add(id):selProds.delete(id); syncSelectAll("prodAll", prodPageIds, selProds); updateProdBulk(); }
+function toggleAllOrders(on){ orderPageIds.forEach(id=> on?selOrders.add(id):selOrders.delete(id)); renderOrders(); }
+function toggleAllProds(on){ prodPageIds.forEach(id=> on?selProds.add(id):selProds.delete(id)); renderProducts(); }
+function clearOrderSel(){ selOrders.clear(); renderOrders(); }
+function clearProdSel(){ selProds.clear(); renderProducts(); }
+function updateOrderBulk(){
+  const bar=document.getElementById("orderBulk");
+  bar.style.display = selOrders.size ? "flex" : "none";
+  document.getElementById("orderBulkCount").textContent = selOrders.size+" selected";
+}
+function updateProdBulk(){
+  const bar=document.getElementById("prodBulk");
+  bar.style.display = selProds.size ? "flex" : "none";
+  document.getElementById("prodBulkCount").textContent = selProds.size+" selected";
+}
+async function bulkOrders(action, label, btn){
+  const ids=[...selOrders]; if(!ids.length) return;
+  if(action==="refund" && !confirm(`Refund ${ids.length} order(s)?`)) return;
+  let ok=0, fail=0;
+  await busy(btn, label+"…", async ()=>{
+    for(const id of ids){ try{ await api(`/api/admin/orders/${id}/${action}`,{method:"POST"}); ok++; }catch(e){ fail++; } }
+  });
+  selOrders.clear(); loadOrders(); loadStats();
+  toast(`${label}: ${ok} done${fail?`, ${fail} failed`:""}`, fail?"error":"success");
+}
+async function bulkProducts(action, btn){
+  const ids=[...selProds]; if(!ids.length) return;
+  if(action==="delete" && !confirm(`Delete ${ids.length} rule(s)? This can't be undone.`)) return;
+  let ok=0, fail=0;
+  await busy(btn, "Working…", async ()=>{
+    for(const id of ids){
+      try{
+        if(action==="delete") await api(`/api/admin/products/${id}`,{method:"DELETE"});
+        else await api(`/api/admin/products/${id}`,{method:"PATCH",body:JSON.stringify({active: action==="activate"})});
+        ok++;
+      }catch(e){ fail++; }
+    }
+  });
+  selProds.clear(); loadProducts(); loadStats();
+  toast(`${ok} rule(s) ${action==="delete"?"deleted":(action+"d")}${fail?`, ${fail} failed`:""}`, fail?"error":"success");
+}
+
 // Transient success/error notification.
 function toast(msg, type){
   let c=document.getElementById("toasts");
@@ -378,6 +450,7 @@ async function loadStats(){
 let productCache = [];
 async function loadProducts(){
   productCache = await api("/api/admin/products");
+  selProds.clear();
   renderProducts();
 }
 function renderProducts(){
@@ -385,6 +458,7 @@ function renderProducts(){
   const filtered = productCache.filter(p=> !q || (p.name||"").toLowerCase().includes(q) || (p.sku||"").toLowerCase().includes(q));
   prodPage = renderPager("prodPager", prodPage, filtered.length, "gotoProdPage");
   const rows = paginate(filtered, prodPage);
+  prodPageIds = rows.map(p=>p.id);
   document.getElementById("prodRows").innerHTML = rows.map(p=>{
     const stock = p.delivery_type==="license_key"
       ? `<span class="stockmini ${p.keys_available===0?'out':''}">${p.keys_available} keys</span>`
@@ -392,6 +466,7 @@ function renderProducts(){
     const keysBtn = p.delivery_type==="license_key"
       ? `<button class="btn sm ghost" onclick="openKeys(${p.id})">Keys</button>` : "";
     return `<tr>
+      <td class="chkcol"><input type="checkbox" class="rowchk" ${selProds.has(p.id)?'checked':''} onchange="toggleProdSel(${p.id},this.checked)"></td>
       <td><b>${esc(p.name)}</b></td>
       <td class="mono" style="font-size:12px">${esc(p.sku)}</td>
       <td><span class="stockmini">${p.delivery_type.replace('_',' ')}</span></td>
@@ -403,7 +478,8 @@ function renderProducts(){
         <button class="btn sm danger" onclick="delProduct(${p.id}, this)">Del</button>
       </td>
     </tr>`;
-  }).join("") || `<tr><td colspan="6" style="color:var(--muted)">No rules${q?" match your search":" yet"}.</td></tr>`;
+  }).join("") || `<tr><td colspan="7" style="color:var(--muted)">No rules${q?" match your search":" yet"}.</td></tr>`;
+  syncSelectAll("prodAll", prodPageIds, selProds); updateProdBulk();
 }
 
 function openProduct(id){
@@ -477,6 +553,7 @@ async function loadOrders(){
   const stores=[...new Set(orderCache.map(o=>o.store).filter(Boolean))].sort();
   sel.innerHTML = `<option value="">All stores</option>` + stores.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join("");
   sel.value = cur;
+  selOrders.clear();
   renderOrders();
 }
 function renderOrders(){
@@ -489,6 +566,7 @@ function renderOrders(){
   });
   orderPage = renderPager("orderPager", orderPage, filtered.length, "gotoOrderPage");
   const rows = paginate(filtered, orderPage);
+  orderPageIds = rows.map(o=>o.public_id);
   document.getElementById("orderRows").innerHTML = rows.map(o=>{
     const items=o.items.map(i=>`${i.quantity}× ${esc(i.product_name)}`).join(", ");
     let actions=`<button class="btn sm ghost" onclick="openOrder('${o.public_id}')">View</button>`;
@@ -496,6 +574,7 @@ function renderOrders(){
     else if(o.status==="paid") actions+=` <button class="btn sm" onclick="fulfill('${o.public_id}', this)">Deliver</button>`;
     if(o.status==="paid"||o.status==="delivered") actions+=` <button class="btn sm danger" onclick="refund('${o.public_id}', this)">Refund</button>`;
     return `<tr>
+      <td class="chkcol"><input type="checkbox" class="rowchk" ${selOrders.has(o.public_id)?'checked':''} onchange="toggleOrderSel('${o.public_id}',this.checked)"></td>
       <td class="mono" style="font-size:12px">${o.public_id.slice(0,8)}</td>
       <td style="font-size:12px;color:var(--muted);white-space:nowrap">${fmtDate(o.created_at)}</td>
       <td>${esc(o.email)}</td>
@@ -506,7 +585,8 @@ function renderOrders(){
       <td><span class="pill ${o.status}">${o.status}</span></td>
       <td style="text-align:right;white-space:nowrap">${actions}</td>
     </tr>`;
-  }).join("") || `<tr><td colspan="9" style="color:var(--muted)">No orders.</td></tr>`;
+  }).join("") || `<tr><td colspan="10" style="color:var(--muted)">No orders.</td></tr>`;
+  syncSelectAll("orderAll", orderPageIds, selOrders); updateOrderBulk();
 }
 async function fulfill(pid, btn){
   try{ await busy(btn, "…", ()=>api(`/api/admin/orders/${pid}/fulfill`,{method:"POST"})); loadOrders(); loadStats(); toast("Order marked paid & delivered"); }
