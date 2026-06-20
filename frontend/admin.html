@@ -133,7 +133,18 @@
   @keyframes pulse{0%,100%{box-shadow:0 0 0 4px rgba(99,102,241,.18)}50%{box-shadow:0 0 0 8px rgba(99,102,241,.06)}}
   /* illustrations */
   .illu-img{width:230px;max-width:62%;height:auto;animation:float 4.5s ease-in-out infinite}
-  .login-illu{width:210px;max-width:80%;height:auto;display:block;margin:0 auto 10px;animation:float 5s ease-in-out infinite}
+  /* split login */
+  .login .box.split{width:820px;max-width:100%;padding:0;display:grid;grid-template-columns:1fr 1fr;overflow:hidden}
+  .login-art{background:linear-gradient(155deg,#eef2ff,#e0e7ff);padding:44px 40px;display:flex;flex-direction:column;justify-content:center}
+  .login-art .brand2{display:flex;align-items:center;font-weight:700;letter-spacing:.04em;margin-bottom:14px;color:var(--text)}
+  .login-art .brand2 .dot{width:13px;height:13px;border-radius:5px;background:linear-gradient(135deg,var(--brand),var(--brand-2));margin-right:10px;animation:pulse 2.6s ease-in-out infinite}
+  .login-art img{width:100%;max-width:270px;margin:6px auto 18px;display:block;animation:float 5s ease-in-out infinite}
+  .login-art h2{font-size:21px;font-weight:700;margin:0 0 6px;letter-spacing:-.01em;color:var(--text)}
+  .login-art p{color:var(--muted);font-size:13px;margin:0;line-height:1.65}
+  .login-form{padding:44px 40px;display:flex;flex-direction:column;justify-content:center}
+  .login-form h1{margin:0 0 4px;font-size:22px;font-weight:700}
+  .login-form .ls{color:var(--muted);font-size:13px;margin:0 0 22px}
+  @media(max-width:720px){.login .box.split{grid-template-columns:1fr}.login-art{display:none}}
   /* animated empty-state illustration */
   .empty{display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--muted);padding:14px}
   .empty .illu{position:relative;width:120px;height:100px;margin-bottom:6px}
@@ -153,16 +164,23 @@
 
 <!-- LOGIN -->
 <div class="login" id="login">
-  <div class="box">
-    <img class="login-illu" src="/static/illustrations/login.svg" alt="" />
-    <h1><span class="dot"></span>Dispatch admin</h1>
-    <p>Sign in to manage products, keys & orders.</p>
-    <label>Email</label>
-    <input type="email" id="lEmail" placeholder="you@example.com" autocomplete="username" />
-    <label>Password</label>
-    <input type="password" id="lPass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()" />
-    <button class="btn" style="width:100%" onclick="doLogin(this)">Sign in</button>
-    <div class="err" id="lErr"></div>
+  <div class="box split">
+    <div class="login-art">
+      <div class="brand2"><span class="dot"></span>DISPATCH</div>
+      <img src="/static/illustrations/login.svg" alt="" />
+      <h2>Run your stores from one place.</h2>
+      <p>Orders, delivery rules, license keys and revenue — managed from a single dashboard.</p>
+    </div>
+    <div class="login-form">
+      <h1>Welcome back</h1>
+      <p class="ls">Sign in to your admin dashboard.</p>
+      <label>Email</label>
+      <input type="email" id="lEmail" placeholder="you@example.com" autocomplete="username" />
+      <label>Password</label>
+      <input type="password" id="lPass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()" />
+      <button class="btn" style="width:100%" onclick="doLogin(this)">Sign in</button>
+      <div class="err" id="lErr"></div>
+    </div>
   </div>
 </div>
 
