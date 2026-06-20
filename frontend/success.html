@@ -32,6 +32,8 @@
   }
   @keyframes pop { from { transform: scale(0.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
   @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes floaty { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+  .hero-illu { width: 220px; max-width: 72%; height: auto; display: block; margin: 0 auto 6px; animation: floaty 4.5s ease-in-out infinite; }
   h1 { font-size: 24px; font-weight: 700; letter-spacing: -.02em; margin-bottom: 8px; }
   p { color: var(--text-muted); font-size: 15px; }
 
@@ -61,7 +63,7 @@
 </head>
 <body>
   <div class="card">
-    <div class="check">✓</div>
+    <img class="hero-illu" src="/static/illustrations/coffee-break.svg" alt="" />
     <h1>Payment confirmed</h1>
     <p>Thank you! Your order is complete — your goods are below and a copy has been emailed to you.</p>
 

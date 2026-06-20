@@ -33,10 +33,12 @@
   .copy { background:none; border:1px solid var(--border-color); color:var(--text-muted); border-radius:6px; padding:4px 8px; cursor:pointer; font-size:11px; white-space:nowrap; }
   .dl { display:inline-block; background:var(--accent); color:#fff; text-decoration:none; padding:10px 16px; border-radius:8px; font-weight:600; font-size:14px; }
   .access { white-space:pre-wrap; font-size:13px; }
+  @keyframes floaty { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 </style>
 </head>
 <body>
   <div class="card">
+    <img src="/static/illustrations/businessman.svg" alt="" style="width:200px;max-width:70%;height:auto;display:block;margin:0 auto 8px;animation:floaty 5s ease-in-out infinite" />
     <h1>Find my order</h1>
     <p class="sub">Lost your download? Enter your email and order id (both are in your confirmation email) to get your goods again.</p>
     <label>Email</label>
