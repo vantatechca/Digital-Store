@@ -36,6 +36,11 @@
   .err{color:var(--bad);font-size:13px;margin-top:8px}
   @keyframes spin{to{transform:rotate(360deg)}}
   .btn-spinner{display:inline-block;width:13px;height:13px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;vertical-align:-2px;margin-right:6px}
+  /* toasts */
+  .toasts{position:fixed;top:18px;right:18px;z-index:100000;display:flex;flex-direction:column;gap:10px}
+  .toast{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-left:4px solid var(--good);border-radius:10px;padding:12px 16px;box-shadow:0 10px 30px rgba(15,23,42,.14);font-size:14px;min-width:240px;max-width:380px;animation:toastIn .2s ease}
+  .toast.error{border-left-color:var(--bad)}
+  @keyframes toastIn{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
 
   /* shell */
   .app{display:none;min-height:100vh}
@@ -266,6 +271,16 @@ async function api(path, opts={}){
   return r.status===204?null:r.json();
 }
 
+// Transient success/error notification.
+function toast(msg, type){
+  let c=document.getElementById("toasts");
+  if(!c){ c=document.createElement("div"); c.id="toasts"; c.className="toasts"; document.body.appendChild(c); }
+  const t=document.createElement("div"); t.className="toast"+(type==="error"?" error":"");
+  t.innerHTML=`<span>${type==="error"?"⚠️":"✅"}</span><span>${esc(msg)}</span>`;
+  c.appendChild(t);
+  setTimeout(()=>{ t.style.transition="opacity .25s,transform .25s"; t.style.opacity="0"; t.style.transform="translateX(14px)"; setTimeout(()=>t.remove(),260); }, 3200);
+}
+
 // Disable a button + show a spinner while an async action runs.
 async function busy(btn, label, fn){
   if(btn){ if(btn.dataset._idle===undefined) btn.dataset._idle=btn.innerHTML; btn.disabled=true; btn.innerHTML=`<span class="btn-spinner"></span>${label||""}`; }
@@ -388,18 +403,20 @@ async function saveProduct(btn){
     delivery_type:pType.value, download_url:pDownload.value, access_template:pAccess.value,
     active:pActive.checked
   };
-  if(!body.sku){ alert("SKU is required — it must match the Shopify variant SKU."); return; }
+  if(!body.sku){ toast("SKU is required — it must match the Shopify variant SKU.", "error"); return; }
   try{
+    const editing = !!pId.value;
     await busy(btn, "Saving…", async ()=>{
       if(pId.value) await api(`/api/admin/products/${pId.value}`,{method:"PATCH",body:JSON.stringify(body)});
       else await api("/api/admin/products",{method:"POST",body:JSON.stringify(body)});
     });
     closeModal("prodModal"); loadProducts(); loadStats();
-  }catch(e){ alert(e.message); }
+    toast(editing ? "Rule updated" : "Rule created");
+  }catch(e){ toast(e.message, "error"); }
 }
 async function delProduct(id, btn){ if(!confirm("Delete this rule?"))return;
-  try{ await busy(btn, "", ()=>api(`/api/admin/products/${id}`,{method:"DELETE"})); loadProducts(); loadStats(); }
-  catch(e){ alert("Couldn't delete: "+e.message); } }
+  try{ await busy(btn, "", ()=>api(`/api/admin/products/${id}`,{method:"DELETE"})); loadProducts(); loadStats(); toast("Rule deleted"); }
+  catch(e){ toast("Couldn't delete: "+e.message, "error"); } }
 
 function openKeys(id){
   const p=productCache.find(x=>x.id===id);
@@ -411,11 +428,12 @@ function openKeys(id){
 async function saveKeys(btn){
   const id=document.getElementById("keysProdId").value;
   const keys=document.getElementById("keysText").value.split("\n").map(s=>s.trim()).filter(Boolean);
-  if(!keys.length){ alert("Paste at least one key."); return; }
+  if(!keys.length){ toast("Paste at least one key.", "error"); return; }
   try{
     await busy(btn, "Adding…", ()=>api(`/api/admin/products/${id}/keys`,{method:"POST",body:JSON.stringify({keys})}));
     closeModal("keysModal"); loadProducts();
-  }catch(e){ alert(e.message); }
+    toast(`${keys.length} key${keys.length>1?"s":""} added`);
+  }catch(e){ toast(e.message, "error"); }
 }
 
 /* ---- orders ---- */
@@ -458,12 +476,12 @@ function renderOrders(){
   }).join("") || `<tr><td colspan="9" style="color:var(--muted)">No orders.</td></tr>`;
 }
 async function fulfill(pid, btn){
-  try{ await busy(btn, "…", ()=>api(`/api/admin/orders/${pid}/fulfill`,{method:"POST"})); loadOrders(); loadStats(); }
-  catch(e){ alert(e.message); }
+  try{ await busy(btn, "…", ()=>api(`/api/admin/orders/${pid}/fulfill`,{method:"POST"})); loadOrders(); loadStats(); toast("Order marked paid & delivered"); }
+  catch(e){ toast(e.message, "error"); }
 }
 async function refund(pid, btn){ if(!confirm("Refund this order?"))return;
-  try{ await busy(btn, "…", ()=>api(`/api/admin/orders/${pid}/refund`,{method:"POST"})); loadOrders(); loadStats(); }
-  catch(e){ alert(e.message); }
+  try{ await busy(btn, "…", ()=>api(`/api/admin/orders/${pid}/refund`,{method:"POST"})); loadOrders(); loadStats(); toast("Order refunded"); }
+  catch(e){ toast(e.message, "error"); }
 }
 
 /* ---- order detail + resend ---- */
@@ -489,8 +507,8 @@ async function openOrder(pid){
 }
 async function resendOrder(){
   if(!currentOrderPid) return;
-  try{ await busy(document.getElementById("odResendBtn"), "Sending…", ()=>api(`/api/admin/orders/${currentOrderPid}/resend`,{method:"POST"})); alert("Confirmation email re-sent."); }
-  catch(e){ alert(e.message); }
+  try{ await busy(document.getElementById("odResendBtn"), "Sending…", ()=>api(`/api/admin/orders/${currentOrderPid}/resend`,{method:"POST"})); toast("Confirmation email re-sent"); }
+  catch(e){ toast(e.message, "error"); }
 }
 
 function closeModal(id){ document.getElementById(id).classList.remove("on"); }
