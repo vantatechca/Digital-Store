@@ -46,6 +46,8 @@
   .toasts{position:fixed;top:18px;right:18px;z-index:100000;display:flex;flex-direction:column;gap:10px}
   .toast{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-left:4px solid var(--good);border-radius:12px;padding:13px 16px;box-shadow:0 14px 36px rgba(15,23,42,.16);font-size:14px;min-width:240px;max-width:380px;animation:toastIn .2s ease}
   .toast.error{border-left-color:var(--bad)}
+  .toast .ticon{flex:0 0 auto;display:inline-flex}
+  .toast .ticon svg{width:19px;height:19px;display:block}
   @keyframes toastIn{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
   /* pagination */
   .pager{display:flex;justify-content:space-between;align-items:center;padding:16px 2px 2px;font-size:13px;color:var(--muted)}
@@ -483,7 +485,10 @@ function toast(msg, type){
   let c=document.getElementById("toasts");
   if(!c){ c=document.createElement("div"); c.id="toasts"; c.className="toasts"; document.body.appendChild(c); }
   const t=document.createElement("div"); t.className="toast"+(type==="error"?" error":"");
-  t.innerHTML=`<span>${type==="error"?"⚠️":"✅"}</span><span>${esc(msg)}</span>`;
+  const ico = type==="error"
+    ? '<svg viewBox="0 0 24 24" fill="none" stroke="var(--bad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v5M12 16h.01"/></svg>'
+    : '<svg viewBox="0 0 24 24" fill="none" stroke="var(--good)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m8.5 12 2.5 2.5 4.5-5.5"/></svg>';
+  t.innerHTML=`<span class="ticon">${ico}</span><span>${esc(msg)}</span>`;
   c.appendChild(t);
   setTimeout(()=>{ t.style.transition="opacity .25s,transform .25s"; t.style.opacity="0"; t.style.transform="translateX(14px)"; setTimeout(()=>t.remove(),260); }, 3200);
 }
