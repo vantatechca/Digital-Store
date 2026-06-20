@@ -302,7 +302,8 @@ async function api(path, opts={}){
 
 // ---- pagination ----
 const PER_PAGE = 20;
-let orderPage = 1, prodPage = 1;
+let orderPage = parseInt(localStorage.getItem("dispatch_orderPage")) || 1;
+let prodPage = parseInt(localStorage.getItem("dispatch_prodPage")) || 1;
 function paginate(arr, page){ return arr.slice((page-1)*PER_PAGE, page*PER_PAGE); }
 function renderPager(elId, page, total, onGo){
   const el = document.getElementById(elId);
@@ -319,8 +320,8 @@ function renderPager(elId, page, total, onGo){
     </span>`;
   return page;
 }
-function gotoOrderPage(n){ orderPage = n; renderOrders(); }
-function gotoProdPage(n){ prodPage = n; renderProducts(); }
+function gotoOrderPage(n){ orderPage = n; localStorage.setItem("dispatch_orderPage", n); renderOrders(); }
+function gotoProdPage(n){ prodPage = n; localStorage.setItem("dispatch_prodPage", n); renderProducts(); }
 
 // ---- bulk selection ----
 let selOrders = new Set(), selProds = new Set();
@@ -411,9 +412,12 @@ function enterApp(){
   document.getElementById("login").style.display="none";
   document.getElementById("app").classList.add("on");
   loadStats(); loadProducts(); loadOrders();
+  // Restore the section the user was on before refreshing.
+  nav(localStorage.getItem("dispatch_view") || "overview");
 }
 
 function nav(v){
+  localStorage.setItem("dispatch_view", v);
   document.querySelectorAll(".nav button[data-v]").forEach(b=>b.classList.toggle("active",b.dataset.v===v));
   document.querySelectorAll(".view").forEach(el=>el.classList.remove("on"));
   document.getElementById("v-"+v).classList.add("on");
