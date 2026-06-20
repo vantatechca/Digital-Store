@@ -374,8 +374,9 @@ async function saveProduct(){
     closeModal("prodModal"); loadProducts(); loadStats();
   }catch(e){ alert(e.message); }
 }
-async function delProduct(id){ if(!confirm("Delete this product?"))return;
-  await api(`/api/admin/products/${id}`,{method:"DELETE"}); loadProducts(); }
+async function delProduct(id){ if(!confirm("Delete this rule?"))return;
+  try{ await api(`/api/admin/products/${id}`,{method:"DELETE"}); loadProducts(); loadStats(); }
+  catch(e){ alert("Couldn't delete: "+e.message); } }
 
 function openKeys(id){
   const p=productCache.find(x=>x.id===id);

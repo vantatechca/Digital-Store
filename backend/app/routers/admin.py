@@ -13,7 +13,7 @@ from ..config import get_settings
 from ..database import get_db
 from ..delivery import fulfill_order, _send_confirmation_email
 from ..models import (
-    Admin, Customer, Delivery, LicenseKey, Order, OrderStatus, Product
+    Admin, Customer, Delivery, LicenseKey, Order, OrderItem, OrderStatus, Product
 )
 from ..schemas import (
     KeysAddIn, OrderOut, ProductCreate, ProductOut, ProductUpdate, StatsOut, TokenOut
@@ -66,6 +66,14 @@ def delete_product(product_id: int, db: Session = Depends(get_db), _: Admin = De
     product = db.query(Product).get(product_id)
     if not product:
         raise HTTPException(404, "Not found")
+    # Detach historical orders/deliveries (they keep the denormalized product_name)
+    # so the foreign keys don't block deletion. License keys cascade automatically.
+    db.query(OrderItem).filter(OrderItem.product_id == product_id).update(
+        {OrderItem.product_id: None}, synchronize_session=False
+    )
+    db.query(Delivery).filter(Delivery.product_id == product_id).update(
+        {Delivery.product_id: None}, synchronize_session=False
+    )
     db.delete(product)
     db.commit()
     return {"ok": True}
