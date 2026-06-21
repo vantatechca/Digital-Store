@@ -34,7 +34,7 @@
 
   .checkout-container { max-width:1140px; margin:0 auto; padding:44px 24px 64px; display:grid; grid-template-columns:1fr 440px; gap:48px; }
   .why-mobile { display:none; }
-  @media (max-width:920px) { .checkout-container { grid-template-columns:1fr; gap:28px; padding:24px 16px 48px; } .order-summary-pane { order:0; position:static; top:auto; } .checkout-forms-pane { order:1; } .why-block.why-desktop { display:none; } .why-mobile { display:block; order:2; } }
+  @media (max-width:920px) { .checkout-container { grid-template-columns:1fr; gap:28px; padding:24px 16px 48px; } .order-summary-pane { order:0; } .checkout-forms-pane { order:1; } .why-block.why-desktop { display:none; } .why-mobile { display:block; order:2; } }
 
   /* left column */
   .form-section { background:var(--bg-card); border:1px solid var(--border-color); border-radius:var(--radius-lg); padding:26px; box-shadow:0 1px 2px rgba(15,23,42,.04); }
@@ -57,7 +57,7 @@
   .assurances .row .ic svg { width:16px; height:16px; }
 
   /* right column */
-  .order-summary-pane { position:sticky; top:88px; height:fit-content; }
+  .order-summary-pane { height:fit-content; }
   .summary-card { background:var(--bg-card); border:1px solid var(--border-color); border-radius:var(--radius-lg); padding:24px; box-shadow:0 1px 2px rgba(15,23,42,.04); }
   .summary-card h2 { font-size:12px; font-weight:600; margin-bottom:18px; text-transform:uppercase; letter-spacing:.07em; color:var(--text-muted); }
   .line { display:flex; gap:12px; padding:14px 0; align-items:center; border-bottom:1px solid var(--border-color); }
