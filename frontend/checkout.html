@@ -71,6 +71,12 @@
   .totals .total { display:flex; justify-content:space-between; align-items:baseline; font-weight:700; font-size:20px; color:var(--text-main); padding-top:10px; border-top:1px solid var(--border-color); }
   .tax-note { font-size:11px; color:var(--text-muted); margin-top:10px; }
 
+  .discount { display:flex; gap:8px; margin:16px 0; padding-top:16px; border-top:1px solid var(--border-color); }
+  .discount input { flex:1; min-width:0; padding:11px 14px; border:1px solid var(--border-color); border-radius:var(--radius-md); font-family:inherit; font-size:14px; color:var(--text-main); outline:none; transition:border-color .15s, box-shadow .15s; }
+  .discount input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(15,23,42,.06); }
+  .discount button { flex:0 0 auto; padding:0 18px; background:var(--bg-main); color:var(--text-main); border:1px solid var(--border-color); border-radius:var(--radius-md); font-family:inherit; font-size:14px; font-weight:600; cursor:pointer; transition:background .15s, border-color .15s; }
+  .discount button:hover { background:#eef0f4; border-color:#d3d6dd; }
+
   .pay-badges { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:18px; padding-top:16px; border-top:1px solid var(--border-color); }
   .pay-badges .cardlogo { font-size:10px; font-weight:700; letter-spacing:.04em; color:#fff; background:#475569; padding:3px 7px; border-radius:4px; }
   .pay-badges .cardlogo.visa { background:#1a1f71; }
@@ -140,6 +146,10 @@
     <div class="summary-card">
       <h2>Order summary</h2>
       <div id="lines"></div>
+      <div class="discount">
+        <input type="text" id="discountCode" placeholder="Discount code" autocomplete="off" />
+        <button type="button" id="applyDiscount">Apply</button>
+      </div>
       <div class="totals">
         <div class="r"><span>Subtotal</span><span class="mono" id="subtotal">$0.00</span></div>
         <div class="total"><span>Total</span><span class="mono" id="total">$0.00</span></div>
