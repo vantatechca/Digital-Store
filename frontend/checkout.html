@@ -40,7 +40,7 @@
   .form-section h2 { font-size:16px; font-weight:600; margin-bottom:6px; }
   .form-section .lead { font-size:13px; color:var(--text-muted); margin-bottom:20px; }
   .field-group { margin-bottom:8px; }
-  .field-group label { display:block; font-size:13px; font-weight:500; margin-bottom:6px; }
+  .field-group label { display:block; font-size:13px; font-weight:500; margin-b ottom:6px; }
   .field-group input { width:100%; padding:13px 14px; border:1px solid var(--border-color); border-radius:var(--radius-md); font-family:inherit; font-size:15px; color:var(--text-main); outline:none; transition:border-color .15s, box-shadow .15s; }
   .field-group input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(15,23,42,.06); }
   .error-msg { color:var(--bad); font-size:12px; margin-top:6px; display:none; }
@@ -77,6 +77,16 @@
   .pay-badges .cardlogo.mc { background:#eb001b; }
   .pay-badges .cardlogo.amex { background:#2e77bc; }
   .pay-badges .powered { margin-left:auto; font-size:11px; color:var(--text-muted); }
+
+  /* why choose us (inside summary card) */
+  .why-block { margin-top:18px; padding-top:18px; border-top:1px solid var(--border-color); }
+  .why-block h3 { font-size:12px; font-weight:600; margin-bottom:16px; text-transform:uppercase; letter-spacing:.07em; color:var(--text-muted); }
+  .why-list { display:flex; flex-direction:column; gap:14px; }
+  .why-row { display:flex; align-items:flex-start; gap:12px; }
+  .why-row .why-ic { flex:0 0 auto; width:26px; height:26px; display:inline-flex; align-items:center; justify-content:center; color:var(--accent); }
+  .why-row .why-ic svg { width:24px; height:24px; }
+  .why-row p { color:var(--text-muted); font-size:13px; line-height:1.5; }
+  .why-row p b { color:var(--text-main); font-weight:600; }
 
   .notice { padding:90px 24px; text-align:center; color:var(--text-muted); }
   .notice b { color:var(--text-main); display:block; font-size:18px; margin-bottom:8px; }
@@ -140,6 +150,24 @@
         <span class="cardlogo mc">MC</span>
         <span class="cardlogo amex">AMEX</span>
         <span class="powered">Payments by Whop</span>
+      </div>
+
+      <div class="why-block">
+        <h3>Why choose us?</h3>
+        <div class="why-list">
+          <div class="why-row">
+            <span class="why-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="m9 14 2 2 4-4"/></svg></span>
+            <p>We stand behind our products. Your satisfaction is our top priority.</p>
+          </div>
+          <div class="why-row">
+            <span class="why-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14v-3a9 9 0 0 1 18 0v3"/><path d="M21 16a2 2 0 0 1-2 2h-1a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1h3z"/><path d="M3 16a2 2 0 0 0 2 2h1a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1H3z"/><path d="M21 18a4 4 0 0 1-4 4h-5"/></svg></span>
+            <p>Amazing customer service. We answer every request the same day, within minutes when possible.</p>
+          </div>
+          <div class="why-row">
+            <span class="why-ic"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="m6 1 .62 1.63L8.25 3.25 6.62 3.87 6 5.5l-.62-1.63L3.75 3.25l1.63-.62z"/><path d="m12 .4.7 1.85 1.9.72-1.9.72L12 5.6l-.7-1.91-1.9-.72 1.9-.72z"/><path d="m18 1 .62 1.63 1.63.62-1.63.62L18 5.5l-.62-1.63-1.63-.62 1.63-.62z"/><circle cx="8" cy="12" r="3"/><circle cx="16" cy="12" r="3"/><path d="M2.5 22a5.5 5.5 0 0 1 11 0z"/><path d="M10.5 22a5.5 5.5 0 0 1 11 0z"/></svg></span>
+            <p>Over <b>137,000 happy customers</b>. We'll always make it right, no matter what!</p>
+          </div>
+        </div>
       </div>
     </div>
   </div>
