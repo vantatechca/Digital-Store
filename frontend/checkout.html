@@ -33,7 +33,8 @@
   .secure { font-size:13px; color:var(--text-muted); display:flex; align-items:center; gap:6px; }
 
   .checkout-container { max-width:1140px; margin:0 auto; padding:44px 24px 64px; display:grid; grid-template-columns:1fr 440px; gap:48px; }
-  @media (max-width:920px) { .checkout-container { grid-template-columns:1fr; gap:28px; padding:24px 16px 48px; } .checkout-forms-pane { order:0; } .order-summary-pane { order:1; position:static; top:auto; } }
+  .why-mobile { display:none; }
+  @media (max-width:920px) { .checkout-container { grid-template-columns:1fr; gap:28px; padding:24px 16px 48px; } .order-summary-pane { order:0; position:static; top:auto; } .checkout-forms-pane { order:1; } .why-block.why-desktop { display:none; } .why-mobile { display:block; order:2; } }
 
   /* left column */
   .form-section { background:var(--bg-card); border:1px solid var(--border-color); border-radius:var(--radius-lg); padding:26px; box-shadow:0 1px 2px rgba(15,23,42,.04); }
@@ -162,7 +163,29 @@
         <span class="powered">Payments by Whop</span>
       </div>
 
-      <div class="why-block">
+      <div class="why-block why-desktop">
+        <h3>Why choose us?</h3>
+        <div class="why-list">
+          <div class="why-row">
+            <span class="why-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="m9 14 2 2 4-4"/></svg></span>
+            <p>We stand behind our products. Your satisfaction is our top priority.</p>
+          </div>
+          <div class="why-row">
+            <span class="why-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14v-3a9 9 0 0 1 18 0v3"/><path d="M21 16a2 2 0 0 1-2 2h-1a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1h3z"/><path d="M3 16a2 2 0 0 0 2 2h1a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1H3z"/><path d="M21 18a4 4 0 0 1-4 4h-5"/></svg></span>
+            <p>Amazing customer service. We answer every request the same day, within minutes when possible.</p>
+          </div>
+          <div class="why-row">
+            <span class="why-ic"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="m6 1 .62 1.63L8.25 3.25 6.62 3.87 6 5.5l-.62-1.63L3.75 3.25l1.63-.62z"/><path d="m12 .4.7 1.85 1.9.72-1.9.72L12 5.6l-.7-1.91-1.9-.72 1.9-.72z"/><path d="m18 1 .62 1.63 1.63.62-1.63.62L18 5.5l-.62-1.63-1.63-.62 1.63-.62z"/><circle cx="8" cy="12" r="3"/><circle cx="16" cy="12" r="3"/><path d="M2.5 22a5.5 5.5 0 0 1 11 0z"/><path d="M10.5 22a5.5 5.5 0 0 1 11 0z"/></svg></span>
+            <p>Over <b>137,000 happy customers</b>. We'll always make it right, no matter what!</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="why-mobile">
+    <div class="summary-card">
+      <div class="why-block" style="margin-top:0;padding-top:0;border-top:none;">
         <h3>Why choose us?</h3>
         <div class="why-list">
           <div class="why-row">
