@@ -33,7 +33,7 @@
   .secure { font-size:13px; color:var(--text-muted); display:flex; align-items:center; gap:6px; }
 
   .checkout-container { max-width:1140px; margin:0 auto; padding:44px 24px 64px; display:grid; grid-template-columns:1fr 440px; gap:48px; }
-  @media (max-width:920px) { .checkout-container { grid-template-columns:1fr; gap:28px; padding:24px 16px 48px; } .order-summary-pane { order:-1; } }
+  @media (max-width:920px) { .checkout-container { grid-template-columns:1fr; gap:28px; padding:24px 16px 48px; } .checkout-forms-pane { order:0; } .order-summary-pane { order:1; position:static; top:auto; } }
 
   /* left column */
   .form-section { background:var(--bg-card); border:1px solid var(--border-color); border-radius:var(--radius-lg); padding:26px; box-shadow:0 1px 2px rgba(15,23,42,.04); }
